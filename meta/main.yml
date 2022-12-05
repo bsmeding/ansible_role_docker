@@ -1,0 +1,25 @@
+galaxy_info:
+  role_name: docker
+  author: Bart Smeding
+  description: Manage and install docker based on role geerlingguy.docker. This role is the base of my other roles based on docker containers
+  license: MIT
+  company: b@rtsmeding.nl
+  min_ansible_version: 2.10
+  platforms:
+  - name: Ubuntu
+    versions:
+    - all
+  - name: Debian
+    versions:
+    - all
+  - name: RHEL
+    versions:
+    - all
+  cloud_platforms: []
+  galaxy_tags:
+  - authelia
+  - docker
+
+dependencies:
+  - geerlingguy.pip
+  - geerlingguy.docker

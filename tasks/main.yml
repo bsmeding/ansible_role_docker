@@ -1,0 +1,61 @@
+- name: Remove conflicting packages for Docker in RHEL
+  ansible.builtin.package:
+    name: podman
+    state: absent
+  when: ansible_os_family == "RedHat"
+
+- name: Ensure group "docker" exists
+  group:
+    name: docker
+    state: present
+
+- name: set docker user
+  user:
+    name: docker
+    comment: docker
+    uid: 1040
+    group: docker
+
+- name: get the username
+  become: false
+  command: whoami
+  register: current_username
+  changed_when: false
+
+- name: Check PIP
+  include_role:
+    name: geerlingguy.pip
+  vars:
+    pip_install_packages:
+      - name: docker
+
+- name: Check Docker role
+  include_role:
+    name: geerlingguy.docker
+  vars:
+    docker_users:
+      - docker
+      - "{{ current_username.stdout }}"
+
+# - name: Creates directory other apps
+#   file:
+#     path: "{{ docker_dir_base }}/{{ item }}"
+#     state: directory
+#     owner: docker
+#     group: 911
+#     mode: 0775
+#     recurse: yes
+#   with_items: "{{ docker_directories }}"
+#   when: docker_directories is defined and docker_directories|length>0
+
+- name: get docker uid
+  getent:
+    database: passwd
+    key: docker
+  register: docker_uid
+
+- name: Save UID
+  set_fact:
+    docker_uid: "{{ docker_uid.ansible_facts.getent_passwd.docker[1] }}"
+    docker_gid: "{{ docker_uid.ansible_facts.getent_passwd.docker[2] }}"
+  when: docker_uid is defined
