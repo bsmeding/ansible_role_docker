@@ -8,16 +8,17 @@ galaxy_info:
   platforms:
   - name: Ubuntu
     versions:
-    - all
+    - bionic
+    - focal
+    - jammy
   - name: Debian
     versions:
-    - all
-  - name: RHEL
-    versions:
-    - all
+    - stretch
+    - buster
+    - bullseye
   cloud_platforms: []
   galaxy_tags:
-  - authelia
+  - geerlingguy
   - docker
 
 dependencies:
