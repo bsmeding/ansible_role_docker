@@ -1,5 +1,5 @@
 galaxy_info:
-  role_name: docker
+  role_name: bsmeding_docker
   author: Bart Smeding
   description: Manage and install docker based on role geerlingguy.docker. This role is the base of my other roles based on docker containers
   license: MIT
