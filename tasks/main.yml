@@ -22,12 +22,13 @@
   register: current_username
   changed_when: false
 
-- name: Check PIP
+- name: Check PIP packages for docker
   include_role:
     name: geerlingguy.pip
   vars:
     pip_install_packages:
       - name: docker
+      - name: docker-compose
 
 - name: Check Docker role
   include_role:
