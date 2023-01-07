@@ -1,3 +1,6 @@
 docker_dir_base: "/opt"
 docker_directories: []
 
+http_proxy: ''
+https_proxy: ''
+no_proxy: ''

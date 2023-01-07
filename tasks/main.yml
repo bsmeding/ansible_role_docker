@@ -51,25 +51,33 @@
       - docker
       - "{{ current_username.stdout }}"
 
-# - name: Creates directory other apps
-#   file:
-#     path: "{{ docker_dir_base }}/{{ item }}"
-#     state: directory
-#     owner: docker
-#     group: 911
-#     mode: 0775
-#     recurse: yes
-#   with_items: "{{ docker_directories }}"
-#   when: docker_directories is defined and docker_directories|length>0
+- name: Proxy found, set proxy file for docker
+  block:
+  - name: Creates directory for proxy file
+    file:
+      path: "/etc/systemd/system/docker.service.d"
+      state: directory
+      owner: root
+      group: docker
+      recurse: yes
+
+  - name: Set docker http-proxy.conf
+    ansible.builtin.template:
+      src: http-proxy.conf.j2
+      dest: "/etc/systemd/system/docker.service.d/http-proxy.conf"
+    notify: restart docker service
+  when: http_proxy is defined or  https_proxy is defined
+
+
 
 - name: get docker uid
-  getent:
+  ansible.builtin.getent:
     database: passwd
     key: docker
   register: docker_uid
 
 - name: Save UID
-  set_fact:
+  ansible.builtin.set_fact:
     docker_uid: "{{ docker_uid.ansible_facts.getent_passwd.docker[1] }}"
     docker_gid: "{{ docker_uid.ansible_facts.getent_passwd.docker[2] }}"
   when: docker_uid is defined
