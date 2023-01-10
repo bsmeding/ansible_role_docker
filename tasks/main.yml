@@ -22,6 +22,12 @@
   register: current_username
   changed_when: false
 
+- name: Check python3-pip is installed
+  ansible.builtin.package:
+    name: python3-pip
+    state: present
+  become: True
+
 - name: Check pip is latest version
   ansible.builtin.pip:
     name: pip
