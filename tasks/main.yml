@@ -33,21 +33,14 @@
     name: pip
     state: latest
     umask: "0022"
-  become: True
+  # become: True
 
 - name: Check docker pip is latest version
   ansible.builtin.pip:
     name: docker
     state: latest
     umask: "0022"
-  become: True
-
-- name: Check docker-compose pip is latest version
-  ansible.builtin.pip:
-    name: docker-compose
-    state: latest
-    umask: "0022"
-  become: True
+  # become: True
 
 - name: Check Docker role
   include_role:
@@ -56,6 +49,13 @@
     docker_users:
       - docker
       - "{{ current_username.stdout }}"
+
+- name: Create a symbolic link for docker-compose on RedHat
+  ansible.builtin.file:
+    src: "{{ docker_compose_path | default('/usr/local/bin/docker-compose') }}" # If default directory for geerlingguy.docker is changed, also change here (same variable name)
+    dest: /usr/bin/docker-compose
+    state: link
+  when: ansible_os_family == "RedHat"
 
 - name: Proxy found, set proxy file for docker
   block:
