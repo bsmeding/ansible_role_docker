@@ -1,0 +1,22 @@
+---
+- name: Ensure docker users are added to the docker group.
+  user:
+    name: "{{ item }}"
+    groups: docker
+    append: true
+  with_items: "{{ docker_users }}"
+
+- name: get docker uid
+  ansible.builtin.getent:
+    database: passwd
+    key: docker
+  register: docker_uid
+
+- name: Save UID
+  ansible.builtin.set_fact:
+    docker_uid: "{{ docker_uid.ansible_facts.getent_passwd.docker[1] }}"
+    docker_gid: "{{ docker_uid.ansible_facts.getent_passwd.docker[2] }}"
+  when: docker_uid is defined
+  
+- name: Reset ssh connection to apply user changes.
+  meta: reset_connection

@@ -1,25 +1,38 @@
+---
+dependencies: []
+
 galaxy_info:
   role_name: docker
-  author: Bart Smeding
-  description: Manage and install docker based on role geerlingguy.docker. This role is the base of my other roles based on docker containers
-  license: MIT
-  company: b@rtsmeding.nl
+  author: bsmeding
+  description: Docker for Linux, Forked from geerlingguy.docker.
+  company: "b@rtsmeding.nl"
+  license: "license (BSD, MIT)"
   min_ansible_version: 2.10
   platforms:
-  - name: Ubuntu
-    versions:
-    - bionic
-    - focal
-    - jammy
-  - name: Debian
-    versions:
-    - stretch
-    - buster
-    - bullseye
-  cloud_platforms: []
+    - name: Fedora
+      versions:
+        - all
+    - name: Debian
+      versions:
+        - buster
+        - bullseye
+        - bookworm
+    - name: Ubuntu
+      versions:
+        - bionic
+        - focal
+        - jammy
+    - name: Alpine
+      version:
+        - all
+    - name: ArchLinux
+      versions:
+        - all
   galaxy_tags:
-  - geerlingguy
-  - docker
-
-# dependencies:
-#  - geerlingguy.docker
+    - web
+    - system
+    - containers
+    - docker
+    - orchestration
+    - compose
+    - server

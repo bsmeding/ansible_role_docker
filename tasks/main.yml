@@ -1,8 +1,14 @@
-- name: Remove conflicting packages for Docker in RHEL
-  ansible.builtin.package:
-    name: podman
-    state: absent
-  when: ansible_os_family == "RedHat"
+---
+- name: Load OS-specific vars.
+  include_vars: "{{ lookup('first_found', params) }}"
+  vars:
+    params:
+      files:
+        - '{{ansible_distribution}}.yml'
+        - '{{ansible_os_family}}.yml'
+        - main.yml
+      paths:
+        - 'vars'
 
 - name: Ensure group "docker" exists
   group:
@@ -13,7 +19,7 @@
   user:
     name: docker
     comment: docker
-    uid: 1040
+    # uid: 1040
     group: docker
 
 - name: get the username
@@ -22,45 +28,14 @@
   register: current_username
   changed_when: false
 
-- name: Check python3-pip is installed
-  ansible.builtin.package:
-    name: python3-pip
-    state: present
-  become: True
-
-- name: Check pip is latest version
-  ansible.builtin.pip:
-    name: pip
-    state: latest
-    umask: "0022"
-  # become: True
-
-- name: Check docker pip is latest version
-  ansible.builtin.pip:
-    name: docker
-    state: latest
-    umask: "0022"
-  # become: True
-
-- name: Check Docker role
-  include_role:
-    name: geerlingguy.docker
-  vars:
-    docker_users:
-      - docker
-      - "{{ current_username.stdout }}"
-
-- name: Create a symbolic link for docker-compose on RedHat
-  ansible.builtin.file:
-    src: "{{ docker_compose_path | default('/usr/local/bin/docker-compose') }}" # If default directory for geerlingguy.docker is changed, also change here (same variable name)
-    dest: /usr/bin/docker-compose
-    state: link
-  when: ansible_os_family == "RedHat"
+- name: Add current user to docker users group variable
+  ansible.builtin.set_fact:
+    docker_users: "{{ docker_users | default([]) + [ current_username.stdout ] }}"
 
 - name: Proxy found, set proxy file for docker
   block:
   - name: Creates directory for proxy file
-    file:
+    ansible.builtin.file:
       path: "/etc/systemd/system/docker.service.d"
       state: directory
       owner: root
@@ -74,14 +49,101 @@
     notify: restart docker service
   when: (http_proxy is defined and http_proxy|length>5) or ( https_proxy is defined and https_proxy|length>5)
 
-- name: get docker uid
-  ansible.builtin.getent:
-    database: passwd
-    key: docker
-  register: docker_uid
 
-- name: Save UID
+- name: Include tasks for RedHat
+  ansible.builtin.include_tasks: setup-RedHat.yml
+  when: ansible_os_family == 'RedHat'
+
+- name: Include tasks for Debian
+  ansible.builtin.include_tasks: setup-Debian.yml
+  when: ansible_os_family == 'Debian'
+
+- name: Ensure group "docker" exists
+  group:
+    name: docker
+    state: present
+
+- name: Install Docker packages.
+  ansible.builtin.package:
+    name: "{{ docker_packages }}"
+    state: "{{ docker_packages_state }}"
+  notify: restart docker
+  ignore_errors: "{{ ansible_check_mode }}"
+  when: "ansible_version.full is version_compare('2.12', '<') or ansible_os_family not in ['RedHat', 'Debian']"
+
+- name: Install Docker packages (with downgrade option).
+  ansible.builtin.package:
+    name: "{{ docker_packages }}"
+    state: "{{ docker_packages_state }}"
+    allow_downgrade: true
+  notify: restart docker
+  ignore_errors: "{{ ansible_check_mode }}"
+  when: "ansible_version.full is version_compare('2.12', '>=') and ansible_os_family in ['RedHat', 'Debian']"
+
+- name: Install docker-compose plugin.
+  ansible.builtin.package:
+    name: "{{ docker_compose_package }}"
+    state: "{{ docker_compose_package_state }}"
+  notify: restart docker
+  ignore_errors: "{{ ansible_check_mode }}"
+  when: "docker_install_compose_plugin | bool == true and (ansible_version.full is version_compare('2.12', '<') or ansible_os_family not in ['RedHat', 'Debian'])"
+
+- name: Install docker-compose-plugin (with downgrade option).
+  ansible.builtin.package:
+    name: "{{ docker_compose_package }}"
+    state: "{{ docker_compose_package_state }}"
+    allow_downgrade: true
+  notify: restart docker
+  ignore_errors: "{{ ansible_check_mode }}"
+  when: "docker_install_compose_plugin | bool == true and ansible_version.full is version_compare('2.12', '>=') and ansible_os_family in ['RedHat', 'Debian']"
+
+- name: Ensure /etc/docker/ directory exists.
+  ansible.builtin.file:
+    path: /etc/docker
+    state: directory
+    mode: 0755
+  when: docker_daemon_options.keys() | length > 0
+
+- name: Configure Docker daemon options.
+  ansible.builtin.copy:
+    content: "{{ docker_daemon_options | to_nice_json }}"
+    dest: /etc/docker/daemon.json
+    mode: 0644
+  when: docker_daemon_options.keys() | length > 0
+  notify: restart docker
+
+- name: Ensure Docker is started and enabled at boot.
+  ansible.builtin.service:
+    name: docker
+    state: "{{ docker_service_state }}"
+    enabled: "{{ docker_service_enabled }}"
+  ignore_errors: "{{ ansible_check_mode }}"
+  when: docker_service_manage | bool
+
+- name: Ensure handlers are notified now to avoid firewall conflicts.
+  meta: flush_handlers
+
+- name: Include tasks for docker-compose
+  ansible.builtin.include_tasks: docker-compose.yml
+  when: docker_install_compose | bool
+
+
+- name: Get docker group info using getent.
+  ansible.builtin.getent:
+    database: group
+    key: docker
+    split: ':'
+  when: docker_users | length > 0
+
+- name: Check if there are any users to add to the docker group.
   ansible.builtin.set_fact:
-    docker_uid: "{{ docker_uid.ansible_facts.getent_passwd.docker[1] }}"
-    docker_gid: "{{ docker_uid.ansible_facts.getent_passwd.docker[2] }}"
-  when: docker_uid is defined
+    at_least_one_user_to_modify: true
+  when:
+    - docker_users | length > 0
+    - item not in ansible_facts.getent_group["docker"][2]
+  with_items: "{{ docker_users }}"
+
+- name: Include tasks for Docker users
+  ansible.builtin.include_tasks: docker-users.yml
+  when: at_least_one_user_to_modify is defined
+
