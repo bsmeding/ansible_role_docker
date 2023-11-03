@@ -35,32 +35,19 @@
 - name: Proxy found, set proxy file for docker
   block:
     # Older version used the service conf file
-    # - name: Creates directory for proxy file (older version before 23)
-    #   ansible.builtin.file:
-    #     path: "/etc/systemd/system/docker.service.d"
-    #     state: directory
-    #     owner: root
-    #     group: root
-    #     recurse: yes
+    - name: Creates directory for proxy file (older version before 23)
+      ansible.builtin.file:
+        path: "/etc/systemd/system/docker.service.d"
+        state: directory
+        owner: root
+        group: root
+        recurse: yes
 
-    # - name: Set docker http-proxy.conf (older version before 23)
-    #   ansible.builtin.template:
-    #     src: http-proxy.conf.j2
-    #     dest: "/etc/systemd/system/docker.service.d/http-proxy.conf"
-    #   notify: restart docker
-
-    - name: Set proxy info for docker_deamon_options
-      ansible.builtin.set_fact:
-        deamon_options_proxy:
-          proxies:
-            default:
-              http-proxy: "{{ http_proxy | default('') }}"
-              https-proxy: "{{ https_proxy | default('') }}"
-              no-proxy: "{{ no_proxy | default('') }}"
-          
-    - name: Add proxy settings to docker_daemon_options (version >22)
-      ansible.builtin.set_fact:
-        docker_daemon_options: "{{ docker_daemon_options | combine(deamon_options_proxy) }}"
+    - name: Set docker http-proxy.conf (older version before 23)
+      ansible.builtin.template:
+        src: http-proxy.conf.j2
+        dest: "/etc/systemd/system/docker.service.d/http-proxy.conf"
+      notify: restart docker
 
   when: (http_proxy is defined and http_proxy|length>5) or ( https_proxy is defined and https_proxy|length>5)
 
