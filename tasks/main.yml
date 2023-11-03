@@ -52,9 +52,10 @@
     - name: Set proxy info for docker_deamon_options
       ansible.builtin.set_fact:
         proxies:
-          http-proxy: "{{ http_proxy | default('') }}"
-          https-proxy: "{{ https_proxy | default('') }}"
-          no-proxy: "{{ no_proxy | default('') }}"
+          default:
+            http-proxy: "{{ http_proxy | default('') }}"
+            https-proxy: "{{ https_proxy | default('') }}"
+            no-proxy: "{{ no_proxy | default('') }}"
           
     - name: Add proxy settings to docker_daemon_options (version >22)
       ansible.builtin.set_fact:
