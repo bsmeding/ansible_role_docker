@@ -2,11 +2,13 @@
 role_name_check: 1
 dependency:
   name: galaxy
+  options:
+    ignore-errors: true
 driver:
   name: docker
 platforms:
   - name: instance
-    image: "geerlingguy/docker-${MOLECULE_DISTRO:-centos7}-ansible:latest"
+    image: "geerlingguy/docker-${MOLECULE_DISTRO:-ubuntu2204}-ansible:latest"
     command: ${MOLECULE_DOCKER_COMMAND:-""}
     volumes:
       - /sys/fs/cgroup:/sys/fs/cgroup:rw
@@ -17,3 +19,4 @@ provisioner:
   name: ansible
   playbooks:
     converge: ${MOLECULE_PLAYBOOK:-converge.yml}
+    # verify: ${MOLECULE_PLAYBOOK_VERIFY:-verify.yml}

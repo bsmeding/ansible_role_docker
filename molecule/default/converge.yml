@@ -4,12 +4,14 @@
   become: true
 
   pre_tasks:
-    - name: Update apt cache.
-      apt: update_cache=yes cache_valid_time=600
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 600
       when: ansible_os_family == 'Debian'
 
-    - name: Wait for systemd to complete initialization.  # noqa 303
-      command: systemctl is-system-running
+    - name: Wait for systemd to complete initialization
+      ansible.builtin.command: systemctl is-system-running
       register: systemctl_status
       until: >
         'running' in systemctl_status.stdout or

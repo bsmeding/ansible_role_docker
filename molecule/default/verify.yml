@@ -1,0 +1,7 @@
+---
+- name: Verify - config AWX with base settings
+  hosts: all
+  become: false
+  tasks:
+    - name: Configure base sessings
+      ansible.builtin.include_tasks: config_awx.yml
