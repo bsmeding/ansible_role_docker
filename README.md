@@ -1,19 +1,20 @@
 # Ansible Role: Docker
 An Ansible Role that installs [Docker](https://www.docker.com) on Linux.
 
-Original from [geerlingguy.docker(https://github.com/geerlingguy/ansible-role-docker/) 
-Additional
+![test status](https://github.com/bsmeding/ansible_role_docker/actions/workflows/ci.yml/badge.svg) 
+Role is tested on, Ubuntu, Debian and Rocky (RedHat like) Linux distributions.
 
+Original from [geerlingguy.docker](https://github.com/geerlingguy/ansible-role-docker/) 
+Additional:
 * Remove PodMan from RedHat linux
 * Add user and group docker:docker
 * Add current Ansible become user to group docker
 * set `docker_uid` and `docker_gui` to the ID's of the docker user and group. This can be used in [other Ansible role from my](https://github.com/bsmeding?tab=repositories&q=ansible+role+docker&type=&language=&sort=) that install on Docker containers
-## Requirements
 
+## Requirements
 None.
 
 ## Role Variables
-
 Available variables are listed below, along with default values (see `defaults/main.yml`):
 
     # Edition can be one of: 'ce' (Community Edition) or 'ee' (Enterprise Edition).
