@@ -104,3 +104,12 @@ Custom `dockerd` options can be configured through this dictionary representing 
 This role was created in 2017 by [Jeff Geerling](https://www.jeffgeerling.com/), author of [Ansible for DevOps](https://www.ansiblefordevops.com/).
 
 Changed with some additional settings by me (Bart Smeding) to integrated in my other Ansible container application roles.
+
+
+## INFO\
+If you get the error `"Error connecting: Error while fetching server API version: Not supported URL scheme http+docker"}` please upgrade the Ansible collections:
+(or set requests python library to < 2.32.0 )
+```
+  - name: community.general
+  - name: community.docker
+```
