@@ -1,4 +1,4 @@
 ---
 collections:
-  - src: community.docker
-  - src: community.general
+  - name: community.docker
+  - name: community.general
