@@ -1,18 +1,19 @@
 # Ansible Role: Docker
 An Ansible Role that installs [Docker](https://www.docker.com) on Linux.
 
-__Please only install the version when testing is PASSED!__
+__Please only install the version when CI is PASSING!__
 
 ![test status](https://github.com/bsmeding/ansible_role_docker/actions/workflows/ci.yml/badge.svg) 
 Role is tested on, Ubuntu, Debian and Rocky (RedHat like) Linux distributions.
 
+Downloads: ![Ansible Role](https://img.shields.io/ansible/role/d/bsmeding/docker)
 
 Original from [geerlingguy.docker](https://github.com/geerlingguy/ansible-role-docker/) 
 Additional:
 * Remove PodMan from RedHat linux
 * Add user and group docker:docker
 * Add current Ansible become user to group docker
-* set `docker_uid` and `docker_gui` to the ID's of the docker user and group. This can be used in [other Ansible role from my](https://github.com/bsmeding?tab=repositories&q=ansible+role+docker&type=&language=&sort=) that install on Docker containers
+* set `docker_uid` and `docker_gui` to the ID's of the docker user and group. This can be used in [other Ansible roles from me](https://galaxy.ansible.com/ui/standalone/namespaces/1041/) that all use docker undernead. This will create a seamless installation.
 
 ## Requirements
 None.
@@ -89,7 +90,7 @@ Usually in combination with changing `docker_yum_repository` as well.
       - user1
       - user2
 
-A list of system users to be added to the `docker` group (so they can use Docker on the server).
+A list of system users to be added to the `docker` group (so they can use Docker on the server). Also the current Ansible user will be added
 
     docker_daemon_options:
       storage-driver: "devicemapper"
@@ -98,44 +99,8 @@ A list of system users to be added to the `docker` group (so they can use Docker
 
 Custom `dockerd` options can be configured through this dictionary representing the json file `/etc/docker/daemon.json`.
 
-## Use with Ansible (and `docker` Python library)
-
-Many users of this role wish to also use Ansible to then _build_ Docker images and manage Docker containers on the server where Docker is installed. In this case, you can easily add in the `docker` Python library using the `geerlingguy.pip` role:
-
-```yaml
-- hosts: all
-
-  vars:
-    pip_install_packages:
-      - name: docker
-
-  roles:
-    - geerlingguy.pip
-    - geerlingguy.docker
-```
-
-## Dependencies
-
-None.
-
-## Example Playbook
-
-```yaml
-- hosts: all
-  roles:
-    - geerlingguy.docker
-```
-
-## License
-
-MIT / BSD
-
-## Sponsors
-
-* [We Manage](https://we-manage.de): Helping start-ups and grown-ups scaling their infrastructure in a sustainable way.
-
-The above sponsor(s) are supporting Jeff Geerling on [GitHub Sponsors](https://github.com/sponsors/geerlingguy). You can sponsor Jeff's work too, to help him continue improving these Ansible open source projects!
-
 ## Author Information
 
 This role was created in 2017 by [Jeff Geerling](https://www.jeffgeerling.com/), author of [Ansible for DevOps](https://www.ansiblefordevops.com/).
+
+Changed with some additional settings by me (Bart Smeding) to integrated in my other Ansible container application roles.
