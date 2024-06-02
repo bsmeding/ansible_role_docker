@@ -3,6 +3,7 @@ An Ansible Role that installs [Docker](https://www.docker.com) on Linux.
 
 ![test status](https://github.com/bsmeding/ansible_role_docker/actions/workflows/ci.yml/badge.svg) 
 Role is tested on, Ubuntu, Debian and Rocky (RedHat like) Linux distributions.
+__Please only install the version when testing is PASSED!__
 
 Original from [geerlingguy.docker](https://github.com/geerlingguy/ansible-role-docker/) 
 Additional:
