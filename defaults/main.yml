@@ -37,6 +37,7 @@ docker_add_repo: true
 # Docker repo URL.
 docker_repo_url: https://download.docker.com/linux
 
+
 # Used only for Debian/Ubuntu/Pop!_OS/Linux Mint. Switch 'stable' to 'nightly' if needed.
 docker_apt_release_channel: stable
 # docker_apt_ansible_distribution is a workaround for Ubuntu variants which can't be identified as such by Ansible,
@@ -59,4 +60,8 @@ docker_yum_gpg_key: "{{ docker_repo_url }}/centos/gpg"
 docker_users: []
 
 # Docker daemon options as a dict
+# Allow remote access
+#Two options to set remote access:
+# Or add to docker_daemon_option: "hosts": ["unix:///var/run/docker.sock", "tcp://127.0.0.1:2375"]
+
 docker_daemon_options: {}
