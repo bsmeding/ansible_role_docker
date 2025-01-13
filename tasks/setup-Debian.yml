@@ -32,6 +32,7 @@
     state: present
   when: ansible_distribution == 'Ubuntu' and ansible_distribution_version is version('20.04', '>=')
 
+# curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.asc
 - name: Add Docker apt key.
   ansible.builtin.get_url:
     url: "{{ docker_apt_gpg_key }}"
@@ -41,7 +42,7 @@
     checksum: "{{ docker_apt_gpg_key_checksum | default(omit) }}"
   register: add_repository_key
   ignore_errors: "{{ docker_apt_ignore_key_error }}"
-  when: docker_add_repo | bool
+  when: docker_add_repo | bool 
 
 - name: Ensure curl is present (on older systems without SNI).
   package: name=curl state=present
