@@ -16,6 +16,7 @@
     name:
       - apt-transport-https
       - ca-certificates
+      - libssl-dev
     state: present
   when: docker_add_repo | bool
 
@@ -34,7 +35,7 @@
 - name: Add Docker apt key.
   ansible.builtin.get_url:
     url: "{{ docker_apt_gpg_key }}"
-    dest: /etc/apt/trusted.gpg.d/docker.asc
+    dest: "{{ docker_apt_key_location }}/docker.asc"
     mode: '0644'
     force: false
     checksum: "{{ docker_apt_gpg_key_checksum | default(omit) }}"
