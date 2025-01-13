@@ -5,6 +5,11 @@
       - docker
       - docker-common
       - docker-engine
+      - docker.io
+      - docker-doc
+      - podman-docker
+      - containerd
+      - runc            
     state: absent
 
 - name: Remove conflicting packages for Docker in RHEL

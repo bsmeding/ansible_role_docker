@@ -4,6 +4,11 @@
     name:
       - docker
       - docker-engine
+      - docker.io
+      - docker-doc
+      - podman-docker
+      - containerd
+      - runc      
     state: absent
 
 - name: Ensure dependencies are installed.
