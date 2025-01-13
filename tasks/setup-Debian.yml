@@ -1,14 +1,26 @@
 ---
-- name: Ensure old versions of Docker are not installed.
+- name: Ensure apt key is not present in trusted.gpg.d
+  ansible.builtin.file:
+    path: /etc/apt/trusted.gpg.d/docker.asc
+    state: absent
+
+- name: Ensure old apt source list is not present in /etc/apt/sources.list.d
+  ansible.builtin.file:
+    path: /etc/apt/sources.list.d/download_docker_com_linux_ubuntu.list
+    state: absent
+
+- name: Ensure the repo referencing the previous trusted.gpg.d key is not present
+  apt_repository:
+    repo: "deb [arch={{ docker_apt_arch }} signed-by=/etc/apt/trusted.gpg.d/docker.asc] {{ docker_repo_url }}/{{ docker_apt_ansible_distribution | lower }} {{ ansible_distribution_release }} {{ docker_apt_release_channel }}"
+    state: absent
+    filename: "{{ docker_apt_filename }}"
+    update_cache: true
+  when: docker_add_repo | bool
+
+- # See https://docs.docker.com/engine/install/debian/#uninstall-old-versions
+  name: Ensure old versions of Docker are not installed.
   package:
-    name:
-      - docker
-      - docker-engine
-      - docker.io
-      - docker-doc
-      - podman-docker
-      - containerd
-      - runc      
+    name: "{{ docker_obsolete_packages }}"
     state: absent
 
 - name: Ensure dependencies are installed.
@@ -16,33 +28,25 @@
     name:
       - apt-transport-https
       - ca-certificates
-      - libssl-dev
     state: present
   when: docker_add_repo | bool
 
-- name: Ensure additional dependencies are installed (on Ubuntu < 20.04 and any other systems).
-  apt:
-    name: gnupg2
-    state: present
-  when: ansible_distribution != 'Ubuntu' or ansible_distribution_version is version('20.04', '<')
+- name: Ensure directory exists for /etc/apt/keyrings
+  file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: "0755"
 
-- name: Ensure additional dependencies are installed (on Ubuntu >= 20.04).
-  apt:
-    name: gnupg
-    state: present
-  when: ansible_distribution == 'Ubuntu' and ansible_distribution_version is version('20.04', '>=')
-
-# curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.asc
 - name: Add Docker apt key.
   ansible.builtin.get_url:
     url: "{{ docker_apt_gpg_key }}"
-    dest: "{{ docker_apt_key_location }}/docker.asc"
-    mode: '0644'
+    dest: /etc/apt/keyrings/docker.asc
+    mode: "0644"
     force: false
     checksum: "{{ docker_apt_gpg_key_checksum | default(omit) }}"
   register: add_repository_key
   ignore_errors: "{{ docker_apt_ignore_key_error }}"
-  when: docker_add_repo | bool 
+  when: docker_add_repo | bool
 
 - name: Ensure curl is present (on older systems without SNI).
   package: name=curl state=present
