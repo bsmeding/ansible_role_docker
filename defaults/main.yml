@@ -9,6 +9,15 @@ docker_packages:
   - "docker-buildx-plugin"
 docker_packages_state: present
 
+docker_obsolete_packages:
+  - docker
+  - docker.io
+  - docker-engine
+  - docker-doc
+  - podman-docker
+  - containerd
+  - runc
+
 # Proxy settings
 http_proxy: ''
 https_proxy: ''
