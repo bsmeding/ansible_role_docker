@@ -2,8 +2,12 @@
 - name: Converge
   hosts: all
   become: true
+  gather_facts: false
+  tasks:
+    - name: Gather facts without sudo
+      ansible.builtin.setup:
+      become: false
 
-  pre_tasks:
     - name: Update apt cache
       ansible.builtin.apt:
         update_cache: true

@@ -20,7 +20,7 @@ provisioner:
   config_options:
     defaults:
       gather_facts: true
-      become: false  
+      become: false
   playbooks:
     converge: ${MOLECULE_PLAYBOOK:-converge.yml}
     # verify: ${MOLECULE_PLAYBOOK_VERIFY:-verify.yml}
