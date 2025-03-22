@@ -1,3 +1,4 @@
+---
 docker_obsolete_packages:
   - docker
   - docker.io
