@@ -8,7 +8,8 @@ driver:
   name: docker
 platforms:
   - name: instance
-    image: "bsmeding/ansible_cicd_${MOLECULE_DISTRO:-debian12}:latest"
+    # image: "bsmeding/ansible_cicd_${MOLECULE_DISTRO:-debian12}:latest"
+    image: "geerlingguy/docker-${MOLECULE_DISTRO:-rockylinux9}-ansible:latest"
     command: ${MOLECULE_DOCKER_COMMAND:-""}
     volumes:
       - /sys/fs/cgroup:/sys/fs/cgroup:rw
