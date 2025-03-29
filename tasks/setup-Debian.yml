@@ -28,7 +28,6 @@
     name:
       - apt-transport-https
       - ca-certificates
-      - libssl-dev
     state: present
   when: docker_add_repo | bool
 
