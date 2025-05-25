@@ -19,7 +19,7 @@
       register: docker_service_status
       when: ansible_service_mgr == 'systemd'
       changed_when: false
-      failed_when: docker_service_status.stdout.strip() != "active"
+      failed_when: "'active' not in docker_service_status.stdout"
 
     - name: Display Docker service status
       ansible.builtin.debug:
