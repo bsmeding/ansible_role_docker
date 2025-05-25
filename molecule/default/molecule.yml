@@ -27,5 +27,5 @@ provisioner:
     verify: ${MOLECULE_PLAYBOOK_VERIFY:-verify.yml}
   inventory:
     host_vars:
-      instance: 
+      instance:
         docker_service_manage: false
