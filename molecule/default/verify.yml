@@ -14,18 +14,29 @@
           Docker Version Output:
           {{ docker_version_result.stdout_lines | join('\n') }}
 
-    - name: Verify Docker service is running
-      ansible.builtin.command: systemctl is-active docker
-      register: docker_service_status
-      when: ansible_service_mgr == 'systemd'
-      changed_when: false
-      failed_when: "'active' not in docker_service_status.stdout"
+    # - name: Verify Docker service is running
+    #   ansible.builtin.command: systemctl is-active docker
+    #   register: docker_service_status
+    #   when: ansible_service_mgr == 'systemd'
+    #   changed_when: false
+    #   failed_when: "'active' not in docker_service_status.stdout"
 
-    - name: Display Docker service status
-      ansible.builtin.debug:
-        msg: "Docker service is {{ docker_service_status.stdout.strip() }}"
-      when: ansible_service_mgr == 'systemd'
+    # - name: Display Docker service status
+    #   ansible.builtin.debug:
+    #     msg: "Docker service is {{ docker_service_status.stdout.strip() }}"
+    #   when: ansible_service_mgr == 'systemd'
 
+    - name: Gather service facts
+      ansible.builtin.service_facts:
+
+    - name: Assert Docker is running
+      ansible.builtin.assert:
+        that:
+          - ansible_facts.services['docker.service'].state == 'running'
+        fail_msg: "Docker service is not running"
+        success_msg: "Docker service is running"
+      when: "'docker.service' in ansible_facts.services"
+      
     - name: Pull the 'hello-world' image
       ansible.builtin.command: docker pull hello-world
       register: docker_pull_result
