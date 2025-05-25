@@ -36,7 +36,7 @@
         fail_msg: "Docker service is not running"
         success_msg: "Docker service is running"
       when: "'docker.service' in ansible_facts.services"
-      
+
     - name: Pull the 'hello-world' image
       ansible.builtin.command: docker pull hello-world
       register: docker_pull_result
