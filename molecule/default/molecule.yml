@@ -25,3 +25,5 @@ provisioner:
   playbooks:
     converge: ${MOLECULE_PLAYBOOK:-converge.yml}
     verify: ${MOLECULE_PLAYBOOK_VERIFY:-verify.yml}
+  options:
+    skip-tags: docker_service
