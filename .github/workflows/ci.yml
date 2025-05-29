@@ -41,11 +41,11 @@ jobs:
     strategy:
       matrix:
         distro:
-          - debian11
-          - debian12
-          - rockylinux8
+          # - debian11
+          # - debian12
+          # - rockylinux8
           # - rockylinux9  # Rocky 9 is not compatible with Docker
-          # - ubuntu2204
+          - ubuntu2204
           # - ubuntu2404
           # - fedora39
           # - fedora40
