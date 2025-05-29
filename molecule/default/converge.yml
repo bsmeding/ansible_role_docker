@@ -18,7 +18,7 @@
       when: ansible_service_mgr == 'systemd'
       changed_when: false
       failed_when: systemctl_status.rc > 1
-    
+
     # Debug for ubuntu
     - name: Show systemd status summary
       command: systemctl list-units --state=failed
