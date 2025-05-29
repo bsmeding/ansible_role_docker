@@ -22,10 +22,10 @@
   roles:
     - role: bsmeding.docker
 
-  tasks:
-  - name: Ensure Docker service is started
-    ansible.builtin.service:
-      name: docker
-      state: started
-    become: true
-    when: ansible_service_mgr == 'systemd'
+  # tasks:
+  #   - name: Ensure Docker service is started
+  #     ansible.builtin.service:
+  #       name: docker
+  #       state: started
+  #     become: true
+  #     when: ansible_service_mgr == 'systemd'
