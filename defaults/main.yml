@@ -6,14 +6,18 @@ docker_packages:
   - "docker-{{ docker_edition }}-cli"
   - "docker-{{ docker_edition }}-rootless-extras"
   - "containerd.io"
-  - "docker-buildx-plugin"
+  - docker-buildx-plugin
+
 docker_packages_state: present
 
+# Default obsolete, final version will be loaded from vars directory
 docker_obsolete_packages:
   - docker
   - docker.io
   - docker-engine
   - docker-doc
+  - docker-compose
+  - docker-compose-v2
   - podman-docker
   - containerd
   - runc

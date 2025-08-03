@@ -1,6 +1,7 @@
 ---
 name: CI
 'on':
+  workflow_dispatch:
   pull_request:
   push:
     branches:
@@ -40,14 +41,14 @@ jobs:
     strategy:
       matrix:
         distro:
-          - debian10
           - debian11
           - debian12
           - rockylinux8
-          - rockylinux9
-          - ubuntu2004
+          # - rockylinux9  # Rocky 9 is not compatible with Docker
           - ubuntu2204
-          - fedora39
+          - ubuntu2404
+          # - fedora39
+          # - fedora40
 
     steps:
       - name: Check out the codebase.

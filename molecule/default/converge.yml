@@ -1,17 +1,14 @@
 ---
 - name: Converge
   hosts: all
-  become: true
-
+  become: false
   pre_tasks:
-    - name: Update apt cache
-      ansible.builtin.apt:
-        update_cache: true
-        cache_valid_time: 600
+    - name: Update apt cache.
+      apt: update_cache=yes cache_valid_time=600
       when: ansible_os_family == 'Debian'
 
-    - name: Wait for systemd to complete initialization
-      ansible.builtin.command: systemctl is-system-running
+    - name: Wait for systemd to complete initialization.  # noqa 303
+      command: systemctl is-system-running
       register: systemctl_status
       until: >
         'running' in systemctl_status.stdout or
@@ -22,5 +19,26 @@
       changed_when: false
       failed_when: systemctl_status.rc > 1
 
+    # Debug for ubuntu
+    - name: Show systemd status summary
+      command: systemctl list-units --state=failed
+      register: failed_units
+      changed_when: false
+      failed_when: false
+      when: ansible_service_mgr == 'systemd'
+
+    - name: Print failed services
+      debug:
+        var: failed_units.stdout_lines
+      when: ansible_service_mgr == 'systemd'
+
   roles:
     - role: bsmeding.docker
+
+  # tasks:
+  #   - name: Ensure Docker service is started
+  #     ansible.builtin.service:
+  #       name: docker
+  #       state: started
+  #     become: true
+  #     when: ansible_service_mgr == 'systemd'

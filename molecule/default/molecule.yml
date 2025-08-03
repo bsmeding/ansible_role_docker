@@ -8,7 +8,7 @@ driver:
   name: docker
 platforms:
   - name: instance
-    image: "geerlingguy/docker-${MOLECULE_DISTRO:-ubuntu2204}-ansible:latest"
+    image: "bsmeding/ansible_cicd_${MOLECULE_DISTRO:-debian12}:latest"
     command: ${MOLECULE_DOCKER_COMMAND:-""}
     volumes:
       - /sys/fs/cgroup:/sys/fs/cgroup:rw
@@ -17,6 +17,15 @@ platforms:
     pre_build_image: true
 provisioner:
   name: ansible
+  config_options:
+    defaults:
+      gather_facts: true
+      become: false
+      remote_tmp: /tmp
   playbooks:
     converge: ${MOLECULE_PLAYBOOK:-converge.yml}
-    # verify: ${MOLECULE_PLAYBOOK_VERIFY:-verify.yml}
+    verify: ${MOLECULE_PLAYBOOK_VERIFY:-verify.yml}
+  inventory:
+    host_vars:
+      instance:
+        docker_service_manage: false
