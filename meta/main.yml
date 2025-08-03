@@ -1,13 +1,11 @@
 ---
-dependencies: []
-
 galaxy_info:
   role_name: docker
   author: bsmeding
   description: Docker for Linux, Forked from geerlingguy.docker.
   company: "b@rtsmeding.nl"
-  license: "license (BSD, MIT)"
-  min_ansible_version: 2.10
+  license: MIT
+  min_ansible_version: '2.10'
   platforms:
     - name: Fedora
       versions:
@@ -23,7 +21,7 @@ galaxy_info:
         - focal
         - jammy
     - name: Alpine
-      version:
+      versions:
         - all
     - name: ArchLinux
       versions:
@@ -36,3 +34,5 @@ galaxy_info:
     - orchestration
     - compose
     - server
+
+dependencies: []
