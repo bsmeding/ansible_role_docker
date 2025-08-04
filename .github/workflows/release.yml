@@ -34,10 +34,6 @@ jobs:
       - name: Install Ansible.
         run: pip3 install ansible-core
 
-<<<<<<< HEAD
-=======
-
->>>>>>> f164d1935f7a7e1e85c547d41202245dd676a052
       - name: Trigger a new import on Galaxy.
         run: >-
           ansible-galaxy role import --api-key ${{ secrets.GALAXY_API_KEY }}
