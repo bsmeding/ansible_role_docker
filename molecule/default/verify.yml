@@ -136,3 +136,4 @@
     #     msg: >
     #       Running 'hello-world' container completed with output:
     #       {{ docker_run_result.stdout_lines | join('\n') }}
+
