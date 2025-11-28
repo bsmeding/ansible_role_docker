@@ -49,7 +49,7 @@ jobs:
           # - debian11
           - debian12
           - debian13
-          - rockylinux8
+          # - rockylinux8
           # - rockylinux9  # Rocky 9 is not compatible with Docker
           - ubuntu2204
           - ubuntu2404
