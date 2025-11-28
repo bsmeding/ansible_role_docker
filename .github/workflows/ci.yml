@@ -26,7 +26,7 @@ jobs:
       - name: Set up Python 3.
         uses: actions/setup-python@v6
         with:
-          python-version: '3.13' # 3.x installad 3.14 and that is not supported by Ansible
+          python-version: '3.14' # 3.x installad 3.14 and that is not supported by Ansible
 
       - name: Install test dependencies.
         run: pip3 install yamllint
@@ -59,7 +59,7 @@ jobs:
       - name: Set up Python 3.
         uses: actions/setup-python@v6
         with:
-          python-version: '3.13' # 3.x installad 3.14 and that is not supported by Ansible
+          python-version: '3.14' # 3.x installad 3.14 and that is not supported by Ansible
 
       - name: Install test dependencies.
         run: pip3 install ansible-core==2.20.0, molecule==24.2.1 molecule-plugins[docker]==23.5.3 docker netaddr requests
