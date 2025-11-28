@@ -37,14 +37,17 @@
       failed_when: docker_version_result.rc != 0
       when: docker_binary_path.rc == 0
 
-    - name: Show Docker version details
-      ansible.builtin.debug:
-        msg: >
-          Docker Version Output:
-          {{ docker_version_result.stdout_lines | join('\n') }}
+    - name: Set Docker version output safely
+      ansible.builtin.set_fact:
+        docker_version_output: "{{ docker_version_result.stdout | default('N/A') }}"
       when:
         - docker_version_result is defined
-        - docker_version_result.stdout_lines is defined
+        - docker_version_result.stdout is defined
+
+    - name: Show Docker version details
+      ansible.builtin.debug:
+        msg: "Docker Version Output: {{ docker_version_output | default('Docker binary not found') }}"
+      when: docker_version_output is defined
 
     # - name: Verify Docker service is running
     #   ansible.builtin.command: systemctl is-active docker
