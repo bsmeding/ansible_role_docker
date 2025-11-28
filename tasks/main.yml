@@ -97,7 +97,7 @@
     allow_downgrade: true
   notify: restart docker
   ignore_errors: "{{ ansible_check_mode }}"
-  when: "docker_install_compose_plugin | bool == true and ansible_version.full is version_compare('2.12', '>=') and ansible_os_family in ['RedHat', 'Debian']"
+  when: "docker_install_compose_plugin | bool == true and ansible_version.full is version_compare('2.12', '>=') and ansible_facts['os_family'] in ['RedHat', 'Debian']"
 
 - name: Ensure /etc/docker/ directory exists.
   ansible.builtin.file:
@@ -135,6 +135,7 @@
     docker_service_name: "{{ 'docker-ce' if 'docker-ce.service' in docker_service_check.stdout else 'docker' }}"
   when: 
     - docker_service_manage | bool
+    - docker_service_check.rc is defined
     - docker_service_check.rc == 0
     - docker_service_check.stdout is defined
 
@@ -146,6 +147,7 @@
   ignore_errors: "{{ ansible_check_mode }}"
   when: 
     - docker_service_manage | bool
+    - docker_service_check.rc is defined
     - docker_service_check.rc == 0
     - docker_service_name is defined
 
