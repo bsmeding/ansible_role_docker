@@ -3,20 +3,28 @@
   hosts: all
   tasks:
     - name: Find Docker binary
-      ansible.builtin.command: which docker || command -v docker || echo ""
+      ansible.builtin.shell: which docker || command -v docker
       register: docker_binary_path
       changed_when: false
       failed_when: false
 
+    - name: Set Docker binary path
+      ansible.builtin.set_fact:
+        docker_cmd: "{{ docker_binary_path.stdout.strip() }}"
+      when:
+        - docker_binary_path.rc == 0
+        - docker_binary_path.stdout | length > 0
+
     - name: Fail if Docker binary not found
       ansible.builtin.fail:
         msg: "Docker binary not found. Converge phase may have failed to install Docker."
-      when: docker_binary_path.stdout == ""
+      when: docker_cmd is not defined or docker_cmd == ""
 
     - name: Verify Docker version
-      ansible.builtin.command: "{{ docker_binary_path.stdout }} --version"
+      ansible.builtin.command: "{{ docker_cmd }} --version"
       register: docker_version
       changed_when: false
+      when: docker_cmd is defined
 
     - name: Display Docker version
       ansible.builtin.debug:
@@ -68,15 +76,17 @@
         - docker_socket.stat.exists | default(false) == false
 
     - name: Test Docker daemon connectivity
-      ansible.builtin.command: "{{ docker_binary_path.stdout }} info"
+      ansible.builtin.command: "{{ docker_cmd }} info"
       register: docker_info
       changed_when: false
       failed_when: docker_info.rc != 0
+      when: docker_cmd is defined
 
     - name: Pull hello-world image to verify Docker works
-      ansible.builtin.command: "{{ docker_binary_path.stdout }} pull hello-world"
+      ansible.builtin.command: "{{ docker_cmd }} pull hello-world"
       register: docker_pull
       changed_when: true
+      when: docker_cmd is defined
 
     - name: Display pull result
       ansible.builtin.debug:
