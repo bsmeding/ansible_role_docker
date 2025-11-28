@@ -37,6 +37,27 @@
         success_msg: "Docker service is running"
       when: "'docker.service' in ansible_facts.services"
 
+    - name: Restart Docker service to ensure daemon matches installed packages
+      ansible.builtin.service:
+        name: docker
+        state: restarted
+      become: true
+      when: ansible_service_mgr == 'systemd'
+
+    - name: Wait for Docker daemon to be ready after restart
+      ansible.builtin.command: docker info
+      register: docker_info_result
+      until: docker_info_result.rc == 0
+      retries: 10
+      delay: 2
+      changed_when: false
+
+    - name: Show Docker daemon information
+      ansible.builtin.debug:
+        msg: >
+          Docker Daemon Info:
+          {{ docker_info_result.stdout_lines | join('\n') }}
+
     - name: Pull the 'hello-world' image
       ansible.builtin.command: docker pull hello-world
       register: docker_pull_result

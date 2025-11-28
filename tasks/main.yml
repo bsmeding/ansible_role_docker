@@ -1,6 +1,6 @@
 ---
 - name: Load OS-specific vars.
-  include_vars: "{{ lookup('first_found', params) }}"
+  ansible.builtin.include_vars: "{{ lookup('first_found', params) }}"
   vars:
     params:
       files:
@@ -11,12 +11,12 @@
         - 'vars'
 
 - name: Ensure group "docker" exists
-  group:
+  ansible.builtin.group:
     name: docker
     state: present
 
 - name: set docker user
-  user:
+  ansible.builtin.user:
     name: docker
     comment: docker
     # uid: 1040
@@ -24,7 +24,7 @@
 
 - name: get the username
   become: false
-  command: whoami
+  ansible.builtin.command: whoami
   register: current_username
   changed_when: false
 
@@ -61,7 +61,7 @@
   when: ansible_os_family == 'Debian'
 
 - name: Ensure group "docker" exists
-  group:
+  ansible.builtin.group:
     name: docker
     state: present
 

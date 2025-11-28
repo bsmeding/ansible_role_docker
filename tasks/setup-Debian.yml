@@ -11,7 +11,7 @@
     state: absent
 
 - name: Ensure the repo referencing the previous trusted.gpg.d key is not present
-  apt_repository:
+  ansible.builtin.apt_repository:
     repo: "deb [arch={{ docker_apt_arch }} signed-by=/etc/apt/trusted.gpg.d/docker.asc] {{ docker_repo_url }}/{{ docker_apt_ansible_distribution | lower }} {{ ansible_distribution_release }} {{ docker_apt_release_channel }}"
     state: absent
     filename: "{{ docker_apt_filename }}"
@@ -19,12 +19,12 @@
   when: docker_add_repo | bool
 
 - name: Ensure old versions of Docker are not installed.
-  package:
+  ansible.builtin.package:
     name: "{{ docker_obsolete_packages }}"
     state: absent
 
 - name: Ensure dependencies are installed.
-  apt:
+  ansible.builtin.apt:
     name:
       - apt-transport-https
       - ca-certificates
@@ -32,7 +32,7 @@
   when: docker_add_repo | bool
 
 - name: Ensure directory exists for /etc/apt/keyrings
-  file:
+  ansible.builtin.file:
     path: /etc/apt/keyrings
     state: directory
     mode: "0755"
@@ -49,16 +49,16 @@
   when: docker_add_repo | bool
 
 - name: Ensure curl is present (on older systems without SNI).
-  package: name=curl state=present
+  ansible.builtin.package: name=curl state=present
   when: add_repository_key is failed and docker_add_repo | bool
 
 - name: Add Docker apt key (alternative for older systems without SNI).
-  shell: >
+  ansible.builtin.shell: >
     curl -sSL {{ docker_apt_gpg_key }} | apt-key add -
   when: add_repository_key is failed and docker_add_repo | bool
 
 - name: Add Docker repository.
-  apt_repository:
+  ansible.builtin.apt_repository:
     repo: "{{ docker_apt_repository }}"
     state: present
     filename: "{{ docker_apt_filename }}"
