@@ -103,24 +103,52 @@
         docker_service_exists: "{{ ansible_facts.services is defined and 'docker.service' in ansible_facts.services }}"
       when: ansible_facts.services is defined
 
+    - name: Reload systemd daemon to recognize new services
+      ansible.builtin.command: systemctl daemon-reload
+      changed_when: true
+      when: ansible_facts["service_mgr"] == 'systemd'
+
+    - name: Check if Docker service exists using systemctl
+      ansible.builtin.command: systemctl list-unit-files --type=service --no-pager | grep -E '^docker(-ce)?\.service'
+      register: docker_service_check
+      changed_when: false
+      failed_when: false
+      when: ansible_facts["service_mgr"] == 'systemd'
+
+    - name: Determine Docker service name from systemctl output
+      ansible.builtin.set_fact:
+        docker_service_name: "{{ 'docker-ce' if 'docker-ce.service' in docker_service_check.stdout else 'docker' }}"
+      when:
+        - ansible_facts["service_mgr"] == 'systemd'
+        - docker_service_check.rc is defined
+        - docker_service_check.rc == 0
+        - docker_service_check.stdout is defined
+
+    - name: Check Docker service state
+      ansible.builtin.set_fact:
+        docker_service_state: "{{ ansible_facts.services['docker.service'].state if ansible_facts.services['docker.service'] is defined else (ansible_facts.services['docker-ce.service'].state if ansible_facts.services['docker-ce.service'] is defined else 'unknown') }}"
+      when:
+        - ansible_facts.services is defined
+        - (ansible_facts.services['docker.service'] is defined) or (ansible_facts.services['docker-ce.service'] is defined)
+
     - name: Assert Docker is running
       ansible.builtin.assert:
         that:
-          - ansible_facts.services is defined
-          - ansible_facts.services['docker.service'] is defined
-          - ansible_facts.services['docker.service'].state == 'running'
-        fail_msg: "Docker service is not running"
+          - docker_service_state is defined
+          - docker_service_state == 'running'
+        fail_msg: "Docker service is not running (state: {{ docker_service_state | default('unknown') }})"
         success_msg: "Docker service is running"
-      when:
-        - ansible_facts.services is defined
-        - ansible_facts.services['docker.service'] is defined
+      when: docker_service_state is defined
 
-    - name: Restart Docker service to ensure daemon matches installed packages
+    - name: Start Docker service to ensure daemon is running
       ansible.builtin.service:
-        name: docker
-        state: restarted
+        name: "{{ docker_service_name | default('docker') }}"
+        state: started
+        enabled: true
       become: true
-      when: ansible_facts["service_mgr"] == 'systemd'
+      when:
+        - ansible_facts["service_mgr"] == 'systemd'
+        - docker_service_name is defined
 
     - name: Set Docker command path
       ansible.builtin.set_fact:
