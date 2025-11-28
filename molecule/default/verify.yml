@@ -2,307 +2,75 @@
 - name: Verify Docker Role
   hosts: all
   tasks:
-    - name: Find Docker binary location in PATH
-      ansible.builtin.command: which docker || command -v docker
+    - name: Find Docker binary
+      ansible.builtin.command: which docker || command -v docker || echo ""
       register: docker_binary_path
       changed_when: false
       failed_when: false
 
-    - name: Find Docker binary in common locations
-      ansible.builtin.stat:
-        path: "{{ item }}"
-      register: docker_binary_stat
-      loop:
-        - /usr/bin/docker
-        - /usr/local/bin/docker
-        - /bin/docker
-      when: docker_binary_path.rc != 0
-      changed_when: false
-      failed_when: false
-
-    - name: Find first existing Docker binary
-      ansible.builtin.set_fact:
-        docker_binary_found: "{{ item.item }}"
-      loop: "{{ docker_binary_stat.results | default([]) }}"
-      when:
-        - docker_binary_path.rc != 0
-        - docker_binary_stat is defined
-        - item.stat.exists | default(false) | bool
-        - docker_binary_found is not defined
-      loop_control:
-        label: "{{ item.item }}"
-
-    - name: Set Docker binary path from found location
-      ansible.builtin.set_fact:
-        docker_binary_path: "{{ {'rc': 0, 'stdout': docker_binary_found} }}"
-      when:
-        - docker_binary_path.rc != 0
-        - docker_binary_found is defined
-
-    - name: Check if Docker packages are installed
-      ansible.builtin.shell: |
-        if command -v dpkg >/dev/null 2>&1; then
-          dpkg -l | grep -E '^ii.*docker-ce|^ii.*docker.io' || true
-        elif command -v rpm >/dev/null 2>&1; then
-          rpm -qa | grep docker || true
-        fi
-      register: docker_package_check
-      changed_when: false
-      failed_when: false
-      when: docker_binary_path.rc != 0
-
-    - name: Fail if Docker is not installed
+    - name: Fail if Docker binary not found
       ansible.builtin.fail:
-        msg: |
-          Docker binary not found and Docker packages not detected.
-          This indicates the converge phase may have failed to install Docker.
-          Please check the converge playbook output for errors.
-      when:
-        - docker_binary_path.rc != 0
-        - docker_package_check.stdout | length == 0
+        msg: "Docker binary not found. Converge phase may have failed to install Docker."
+      when: docker_binary_path.stdout == ""
 
-    - name: Verify Docker binary is available
+    - name: Verify Docker version
       ansible.builtin.command: "{{ docker_binary_path.stdout }} --version"
-      register: docker_version_result
+      register: docker_version
       changed_when: false
-      failed_when: docker_version_result.rc != 0
-      when: docker_binary_path.rc == 0
 
-    - name: Set Docker version output safely
-      ansible.builtin.set_fact:
-        docker_version_output: "{{ docker_version_result.stdout | default('N/A') }}"
-      when:
-        - docker_version_result is defined
-        - docker_version_result.stdout is defined
-
-    - name: Show Docker version details
+    - name: Display Docker version
       ansible.builtin.debug:
-        msg: "Docker Version Output: {{ docker_version_output | default('Docker binary not found') }}"
-      when: docker_version_output is defined
+        msg: "Docker version: {{ docker_version.stdout }}"
 
-    # - name: Verify Docker service is running
-    #   ansible.builtin.command: systemctl is-active docker
-    #   register: docker_service_status
-    #   when: ansible_service_mgr == 'systemd'
-    #   changed_when: false
-    #   failed_when: "'active' not in docker_service_status.stdout"
-
-    # - name: Display Docker service status
-    #   ansible.builtin.debug:
-    #     msg: "Docker service is {{ docker_service_status.stdout.strip() }}"
-    #   when: ansible_service_mgr == 'systemd'
-
-    - name: Gather service facts
-      ansible.builtin.service_facts:
-      register: service_facts_result
-      failed_when: false
-      changed_when: false
-
-    - name: Check if Docker service exists in facts
-      ansible.builtin.set_fact:
-        docker_service_exists: "{{ ansible_facts.services is defined and 'docker.service' in ansible_facts.services }}"
-      when: ansible_facts.services is defined
-
-    - name: Reload systemd daemon to recognize new services
-      ansible.builtin.command: systemctl daemon-reload
-      changed_when: true
-      when: ansible_facts["service_mgr"] == 'systemd'
-
-    - name: Check if Docker service exists using systemctl
-      ansible.builtin.command: systemctl list-unit-files --type=service --no-pager | grep -E '^docker(-ce)?\.service'
-      register: docker_service_check
-      changed_when: false
-      failed_when: false
-      when: ansible_facts["service_mgr"] == 'systemd'
-
-    - name: Determine Docker service name from systemctl output
-      ansible.builtin.set_fact:
-        docker_service_name: "{{ 'docker-ce' if 'docker-ce.service' in docker_service_check.stdout else 'docker' }}"
-      when:
-        - ansible_facts["service_mgr"] == 'systemd'
-        - docker_service_check.rc is defined
-        - docker_service_check.rc == 0
-        - docker_service_check.stdout is defined
-
-    - name: Set default Docker service name if not detected
-      ansible.builtin.set_fact:
-        docker_service_name: "docker"
-      when:
-        - ansible_facts["service_mgr"] == 'systemd'
-        - docker_service_name is not defined
-
-    - name: Check which Docker service exists
-      ansible.builtin.command: systemctl list-unit-files --type=service | grep -E '^docker(-ce)?\.service' || echo "none"
-      register: docker_service_list
-      changed_when: false
-      failed_when: false
-      when: ansible_facts["service_mgr"] == 'systemd'
-
-    - name: Show available Docker services
-      ansible.builtin.debug:
-        msg: "Available Docker services: {{ docker_service_list.stdout }}"
-      when:
-        - ansible_facts["service_mgr"] == 'systemd'
-        - docker_service_list is defined
-
-    - name: Start Docker service (try docker)
+    - name: Ensure Docker service is running (try docker)
       ansible.builtin.service:
         name: docker
         state: started
         enabled: true
       become: true
-      register: docker_start_result
       ignore_errors: true
       when: ansible_facts["service_mgr"] == 'systemd'
 
-    - name: Start Docker service (try docker-ce)
+    - name: Ensure Docker service is running (try docker-ce)
       ansible.builtin.service:
         name: docker-ce
         state: started
         enabled: true
       become: true
-      register: docker_ce_start_result
       ignore_errors: true
       when: ansible_facts["service_mgr"] == 'systemd'
 
-    - name: Wait a moment for services to start
+    - name: Wait a moment for Docker service to start
       ansible.builtin.pause:
-        seconds: 5
+        seconds: 3
       when: ansible_facts["service_mgr"] == 'systemd'
 
-    - name: Check Docker service status
-      ansible.builtin.command: systemctl is-active docker || systemctl is-active docker-ce || echo "neither active"
-      register: docker_active_check
-      changed_when: false
-      failed_when: false
-      when: ansible_facts["service_mgr"] == 'systemd'
-
-    - name: Show Docker service active status
-      ansible.builtin.debug:
-        msg: "Docker service active check: {{ docker_active_check.stdout }}"
-      when:
-        - ansible_facts["service_mgr"] == 'systemd'
-        - docker_active_check is defined
-
-    - name: Check Docker service logs for errors
-      ansible.builtin.command: journalctl -u docker -u docker-ce --no-pager -n 30 || true
-      register: docker_logs
-      changed_when: false
-      failed_when: false
-      when: ansible_facts["service_mgr"] == 'systemd'
-
-    - name: Show Docker service logs
-      ansible.builtin.debug:
-        msg: "Docker service logs: {{ docker_logs.stdout_lines | default([]) | join('\n') }}"
-      when:
-        - ansible_facts["service_mgr"] == 'systemd'
-        - docker_logs is defined
-
-    - name: Wait for Docker socket to appear
+    - name: Wait for Docker daemon to be ready
       ansible.builtin.wait_for:
         path: /var/run/docker.sock
         state: present
-        timeout: 60
-      register: socket_wait_result
-      when: ansible_facts["service_mgr"] == 'systemd'
-      ignore_errors: true
-
-    - name: Check if Docker socket appeared
-      ansible.builtin.debug:
-        msg: "Docker socket wait result: {{ 'success' if socket_wait_result is succeeded else 'failed or timeout' }}"
-      when:
-        - ansible_facts["service_mgr"] == 'systemd'
-        - socket_wait_result is defined
-
-    - name: Verify Docker socket exists
-      ansible.builtin.stat:
-        path: /var/run/docker.sock
-      register: docker_socket_final
+        timeout: 30
+      register: socket_wait
       when: ansible_facts["service_mgr"] == 'systemd'
 
-    - name: Fail if Docker socket does not exist
+    - name: Fail if Docker socket did not appear
       ansible.builtin.fail:
-        msg: |
-          Docker daemon is not running. Socket /var/run/docker.sock does not exist.
-          Service status: {{ docker_active_check.stdout | default('unknown') }}
-          Please check the Docker service logs above for errors.
+        msg: "Docker daemon is not running. Socket /var/run/docker.sock did not appear within 30 seconds. Check Docker service status and logs."
       when:
         - ansible_facts["service_mgr"] == 'systemd'
-        - docker_socket_final.stat.exists | default(false) == false
+        - socket_wait is failed or socket_wait is skipped
 
-    - name: Refresh service facts after starting Docker
-      ansible.builtin.service_facts:
-      when: ansible_facts["service_mgr"] == 'systemd'
-
-    - name: Check Docker service state
-      ansible.builtin.set_fact:
-        docker_service_state: "{{ ansible_facts.services['docker.service'].state if ansible_facts.services['docker.service'] is defined else (ansible_facts.services['docker-ce.service'].state if ansible_facts.services['docker-ce.service'] is defined else 'unknown') }}"
-      when:
-        - ansible_facts.services is defined
-        - (ansible_facts.services['docker.service'] is defined) or (ansible_facts.services['docker-ce.service'] is defined)
-
-    - name: Assert Docker is running
-      ansible.builtin.assert:
-        that:
-          - docker_service_state is defined
-          - docker_service_state == 'running'
-        fail_msg: "Docker service is not running (state: {{ docker_service_state | default('unknown') }})"
-        success_msg: "Docker service is running"
-      when: docker_service_state is defined
-
-    - name: Set Docker command path
-      ansible.builtin.set_fact:
-        docker_cmd: "{{ docker_binary_path.stdout }}"
-      when: docker_binary_path.rc == 0
-
-    - name: Wait for Docker daemon to be ready after restart
-      ansible.builtin.command: "{{ docker_cmd }} info"
-      register: docker_info_result
-      until: docker_info_result.rc == 0
-      retries: 10
-      delay: 2
+    - name: Test Docker daemon connectivity
+      ansible.builtin.command: "{{ docker_binary_path.stdout }} info"
+      register: docker_info
       changed_when: false
-      when: docker_cmd is defined
+      failed_when: docker_info.rc != 0
 
-    - name: Set Docker daemon info safely
-      ansible.builtin.set_fact:
-        docker_daemon_info: "{{ docker_info_result.stdout | default('N/A') }}"
-      when:
-        - docker_info_result is defined
-        - docker_info_result.stdout is defined
-
-    - name: Show Docker daemon information
-      ansible.builtin.debug:
-        msg: "Docker Daemon Info: {{ docker_daemon_info | default('Docker daemon info not available') }}"
-      when: docker_daemon_info is defined
-
-    - name: Pull the 'hello-world' image
-      ansible.builtin.command: "{{ docker_cmd }} pull hello-world"
-      register: docker_pull_result
+    - name: Pull hello-world image to verify Docker works
+      ansible.builtin.command: "{{ docker_binary_path.stdout }} pull hello-world"
+      register: docker_pull
       changed_when: true
-      failed_when: docker_pull_result.rc != 0
-      when: docker_cmd is defined
 
-    - name: Set Docker pull result safely
-      ansible.builtin.set_fact:
-        docker_pull_output: "{{ docker_pull_result.stdout | default('N/A') }}"
-      when:
-        - docker_pull_result is defined
-        - docker_pull_result.stdout is defined
-
-    - name: Show result of pulling the 'hello-world' image
+    - name: Display pull result
       ansible.builtin.debug:
-        msg: "Pulling 'hello-world' completed with output: {{ docker_pull_output | default('Pull result not available') }}"
-      when: docker_pull_output is defined
-
-    # - name: Run a test container (hello-world)
-    #   ansible.builtin.command: docker run --rm hello-world
-    #   register: docker_run_result
-    #   changed_when: true
-    #   failed_when: docker_run_result.rc != 0
-
-    # - name: Display test container output
-    #   ansible.builtin.debug:
-    #     msg: >
-    #       Running 'hello-world' container completed with output:
-    #       {{ docker_run_result.stdout_lines | join('\n') }}
+        msg: "Successfully pulled hello-world image: {{ docker_pull.stdout_lines[-1] | default('OK') }}"
