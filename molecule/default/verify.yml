@@ -131,6 +131,20 @@
         - ansible_facts["service_mgr"] == 'systemd'
         - docker_service_name is not defined
 
+    - name: Check which Docker service exists
+      ansible.builtin.command: systemctl list-unit-files --type=service | grep -E '^docker(-ce)?\.service' || echo "none"
+      register: docker_service_list
+      changed_when: false
+      failed_when: false
+      when: ansible_facts["service_mgr"] == 'systemd'
+
+    - name: Show available Docker services
+      ansible.builtin.debug:
+        msg: "Available Docker services: {{ docker_service_list.stdout }}"
+      when:
+        - ansible_facts["service_mgr"] == 'systemd'
+        - docker_service_list is defined
+
     - name: Start Docker service (try docker)
       ansible.builtin.service:
         name: docker
@@ -151,6 +165,11 @@
       ignore_errors: true
       when: ansible_facts["service_mgr"] == 'systemd'
 
+    - name: Wait a moment for services to start
+      ansible.builtin.pause:
+        seconds: 5
+      when: ansible_facts["service_mgr"] == 'systemd'
+
     - name: Check Docker service status
       ansible.builtin.command: systemctl is-active docker || systemctl is-active docker-ce || echo "neither active"
       register: docker_active_check
@@ -166,7 +185,7 @@
         - docker_active_check is defined
 
     - name: Check Docker service logs for errors
-      ansible.builtin.command: journalctl -u docker -u docker-ce --no-pager -n 20 || true
+      ansible.builtin.command: journalctl -u docker -u docker-ce --no-pager -n 30 || true
       register: docker_logs
       changed_when: false
       failed_when: false
@@ -183,8 +202,33 @@
       ansible.builtin.wait_for:
         path: /var/run/docker.sock
         state: present
-        timeout: 30
+        timeout: 60
+      register: socket_wait_result
       when: ansible_facts["service_mgr"] == 'systemd'
+      ignore_errors: true
+
+    - name: Check if Docker socket appeared
+      ansible.builtin.debug:
+        msg: "Docker socket wait result: {{ 'success' if socket_wait_result is succeeded else 'failed or timeout' }}"
+      when:
+        - ansible_facts["service_mgr"] == 'systemd'
+        - socket_wait_result is defined
+
+    - name: Verify Docker socket exists
+      ansible.builtin.stat:
+        path: /var/run/docker.sock
+      register: docker_socket_final
+      when: ansible_facts["service_mgr"] == 'systemd'
+
+    - name: Fail if Docker socket does not exist
+      ansible.builtin.fail:
+        msg: |
+          Docker daemon is not running. Socket /var/run/docker.sock does not exist.
+          Service status: {{ docker_active_check.stdout | default('unknown') }}
+          Please check the Docker service logs above for errors.
+      when:
+        - ansible_facts["service_mgr"] == 'systemd'
+        - docker_socket_final.stat.exists | default(false) == false
 
     - name: Refresh service facts after starting Docker
       ansible.builtin.service_facts:
