@@ -16,6 +16,25 @@
     state: absent
   when: docker_add_repo | bool
 
+- name: Ensure old apt source list is not present in /etc/apt/sources.list.d/docker.list
+  ansible.builtin.stat:
+    path: "/etc/apt/sources.list.d/docker.list"
+  register: legacy_docker_list
+
+- name: Check whether legacy docker.list references the official Docker repo
+  when: legacy_docker_list.stat.exists | bool
+  ansible.builtin.command:
+    cmd: grep -q "{{ docker_repo_url }}" /etc/apt/sources.list.d/docker.list
+  register: legacy_grep
+  ignore_errors: true
+  changed_when: false
+
+- name: Remove legacy docker.list if it does not reference the official Docker repo
+  when: legacy_docker_list.stat.exists and legacy_grep.rc != 0
+  ansible.builtin.file:
+    path: "/etc/apt/sources.list.d/docker.list"
+    state: absent
+
 - name: Ensure old versions of Docker are not installed.
   ansible.builtin.package:
     name: "{{ docker_obsolete_packages }}"
@@ -26,6 +45,7 @@
     name:
       - apt-transport-https
       - ca-certificates
+      - gpg
     state: present
   when: docker_add_repo | bool
 

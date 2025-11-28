@@ -40,7 +40,7 @@ docker_compose_package_state: present
 
 # Docker Compose options.
 docker_install_compose: false
-docker_compose_version: "v2.32.1"
+docker_compose_version: "v2.40.3"
 docker_compose_arch: "{{ ansible_facts['architecture'] }}"
 docker_compose_url: "https://github.com/docker/compose/releases/download/{{ docker_compose_version }}/docker-compose-linux-{{ docker_compose_arch }}"
 docker_compose_path: /usr/local/bin/docker-compose
@@ -76,7 +76,7 @@ docker_users: []
 
 # Docker daemon options as a dict
 # Allow remote access
-#Two options to set remote access:
-# Or add to docker_daemon_option: "hosts": ["unix:///var/run/docker.sock", "tcp://127.0.0.1:2375"]
+# Two options to set remote access:
+#    Or add to docker_daemon_option: "hosts": ["unix:///var/run/docker.sock", "tcp://127.0.0.1:2375"]
 
 docker_daemon_options: {}
