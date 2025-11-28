@@ -105,12 +105,17 @@
       changed_when: false
       when: docker_cmd is defined
 
+    - name: Set Docker daemon info safely
+      ansible.builtin.set_fact:
+        docker_daemon_info: "{{ docker_info_result.stdout | default('N/A') }}"
+      when:
+        - docker_info_result is defined
+        - docker_info_result.stdout is defined
+
     - name: Show Docker daemon information
       ansible.builtin.debug:
-        msg: >
-          Docker Daemon Info:
-          {{ docker_info_result.stdout_lines | join('\n') }}
-      when: docker_info_result is defined
+        msg: "Docker Daemon Info: {{ docker_daemon_info | default('Docker daemon info not available') }}"
+      when: docker_daemon_info is defined
 
     - name: Pull the 'hello-world' image
       ansible.builtin.command: "{{ docker_cmd }} pull hello-world"
@@ -119,11 +124,17 @@
       failed_when: docker_pull_result.rc != 0
       when: docker_cmd is defined
 
+    - name: Set Docker pull result safely
+      ansible.builtin.set_fact:
+        docker_pull_output: "{{ docker_pull_result.stdout | default('N/A') }}"
+      when:
+        - docker_pull_result is defined
+        - docker_pull_result.stdout is defined
+
     - name: Show result of pulling the 'hello-world' image
       ansible.builtin.debug:
-        msg: >
-          Pulling 'hello-world' completed with output:
-          {{ docker_pull_result.stdout_lines | join('\n') }}
+        msg: "Pulling 'hello-world' completed with output: {{ docker_pull_output | default('Pull result not available') }}"
+      when: docker_pull_output is defined
 
     # - name: Run a test container (hello-world)
     #   ansible.builtin.command: docker run --rm hello-world
@@ -136,4 +147,3 @@
     #     msg: >
     #       Running 'hello-world' container completed with output:
     #       {{ docker_run_result.stdout_lines | join('\n') }}
-
