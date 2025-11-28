@@ -117,7 +117,7 @@
 - name: Reload systemd daemon to recognize new services
   ansible.builtin.command: systemctl daemon-reload
   changed_when: true
-  when: 
+  when:
     - docker_service_manage | bool
     - ansible_facts["service_mgr"] == "systemd"
 
@@ -126,14 +126,14 @@
   register: docker_service_check
   changed_when: false
   failed_when: false
-  when: 
+  when:
     - docker_service_manage | bool
     - ansible_facts["service_mgr"] == "systemd"
 
 - name: Determine Docker service name from systemctl output
   ansible.builtin.set_fact:
     docker_service_name: "{{ 'docker-ce' if 'docker-ce.service' in docker_service_check.stdout else 'docker' }}"
-  when: 
+  when:
     - docker_service_manage | bool
     - docker_service_check.rc is defined
     - docker_service_check.rc == 0
@@ -145,7 +145,7 @@
     state: "{{ docker_service_state }}"
     enabled: "{{ docker_service_enabled }}"
   ignore_errors: "{{ ansible_check_mode }}"
-  when: 
+  when:
     - docker_service_manage | bool
     - docker_service_check.rc is defined
     - docker_service_check.rc == 0

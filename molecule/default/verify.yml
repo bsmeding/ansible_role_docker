@@ -26,7 +26,7 @@
           Docker binary not found and Docker packages not detected.
           This indicates the converge phase may have failed to install Docker.
           Please check the converge playbook output for errors.
-      when: 
+      when:
         - docker_binary_path.rc != 0
         - docker_package_check.stdout | length == 0
 
@@ -42,6 +42,9 @@
         msg: >
           Docker Version Output:
           {{ docker_version_result.stdout_lines | join('\n') }}
+      when:
+        - docker_version_result is defined
+        - docker_version_result.stdout_lines is defined
 
     # - name: Verify Docker service is running
     #   ansible.builtin.command: systemctl is-active docker
