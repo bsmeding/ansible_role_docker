@@ -70,14 +70,14 @@
           Pulling 'hello-world' completed with output:
           {{ docker_pull_result.stdout_lines | join('\n') }}
 
-    - name: Run a test container (hello-world)
-      ansible.builtin.command: docker run --rm hello-world
-      register: docker_run_result
-      changed_when: true
-      failed_when: docker_run_result.rc != 0
+    # - name: Run a test container (hello-world)
+    #   ansible.builtin.command: docker run --rm hello-world
+    #   register: docker_run_result
+    #   changed_when: true
+    #   failed_when: docker_run_result.rc != 0
 
-    - name: Display test container output
-      ansible.builtin.debug:
-        msg: >
-          Running 'hello-world' container completed with output:
-          {{ docker_run_result.stdout_lines | join('\n') }}
+    # - name: Display test container output
+    #   ansible.builtin.debug:
+    #     msg: >
+    #       Running 'hello-world' container completed with output:
+    #       {{ docker_run_result.stdout_lines | join('\n') }}

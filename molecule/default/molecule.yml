@@ -17,15 +17,5 @@ platforms:
     pre_build_image: true
 provisioner:
   name: ansible
-  config_options:
-    defaults:
-      gather_facts: true
-      become: false
-      remote_tmp: /tmp
   playbooks:
     converge: ${MOLECULE_PLAYBOOK:-converge.yml}
-    verify: ${MOLECULE_PLAYBOOK_VERIFY:-verify.yml}
-  inventory:
-    host_vars:
-      instance:
-        docker_service_manage: false
