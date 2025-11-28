@@ -5,18 +5,17 @@
   tasks:
     - name: Ensure Python 3.9+ is available and /usr/bin/python3 points to it
       ansible.builtin.raw: |
-        set -e
+        # Rocky Linux 8: Install Python 3.9 and make it the default python3
         if [ -f /etc/os-release ]; then
           . /etc/os-release
-          # Rocky Linux 8: Install Python 3.9 and make it the default python3
           if [ "$ID" = "rocky" ] && [ "$VERSION_ID" = "8" ]; then
             if ! command -v python3.9 &> /dev/null; then
-              dnf install -y python39 python39-pip
+              dnf install -y python39 python39-pip || exit 1
             fi
             # Backup current python3 and symlink to python3.9
             if [ -f /usr/bin/python3.9 ]; then
               if [ -L /usr/bin/python3 ]; then
-                CURRENT_TARGET=$(readlink -f /usr/bin/python3)
+                CURRENT_TARGET=$(readlink -f /usr/bin/python3 2>/dev/null || echo "")
                 if [ "$CURRENT_TARGET" != "/usr/bin/python3.9" ]; then
                   rm -f /usr/bin/python3
                   ln -sf /usr/bin/python3.9 /usr/bin/python3
@@ -27,18 +26,24 @@
               fi
             fi
           fi
-          # For other distros, verify python3 is 3.9+ (should already be)
-          PY3_VERSION=$(python3 --version 2>&1 | awk '{print $2}' | cut -d. -f1,2)
-          PY3_MAJOR=$(echo $PY3_VERSION | cut -d. -f1)
-          PY3_MINOR=$(echo $PY3_VERSION | cut -d. -f2)
-          if [ "$PY3_MAJOR" -lt 3 ] || ([ "$PY3_MAJOR" -eq 3 ] && [ "$PY3_MINOR" -lt 9 ]); then
-            echo "ERROR: Python 3.9+ required, found $PY3_VERSION"
-            exit 1
+        fi
+        # For all distros, verify python3 is 3.9+ (should already be for non-Rocky)
+        if command -v python3 &> /dev/null; then
+          PY3_VERSION=$(python3 --version 2>&1 | awk '{print $2}' | head -1)
+          PY3_MAJOR=$(echo "$PY3_VERSION" | cut -d. -f1)
+          PY3_MINOR=$(echo "$PY3_VERSION" | cut -d. -f2)
+          if [ -n "$PY3_MAJOR" ] && [ -n "$PY3_MINOR" ]; then
+            if [ "$PY3_MAJOR" -lt 3 ] || ([ "$PY3_MAJOR" -eq 3 ] && [ "$PY3_MINOR" -lt 9 ]); then
+              echo "ERROR: Python 3.9+ required, found $PY3_VERSION"
+              exit 1
+            fi
           fi
           python3 --version
+        else
+          echo "ERROR: python3 not found"
+          exit 1
         fi
       register: prepare_result
       changed_when: true
       failed_when: false
       become: true
-
