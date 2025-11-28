@@ -124,6 +124,40 @@
         - docker_service_check.rc == 0
         - docker_service_check.stdout is defined
 
+    - name: Set default Docker service name if not detected
+      ansible.builtin.set_fact:
+        docker_service_name: "docker"
+      when:
+        - ansible_facts["service_mgr"] == 'systemd'
+        - docker_service_name is not defined
+
+    - name: Start Docker service (try docker)
+      ansible.builtin.service:
+        name: docker
+        state: started
+        enabled: true
+      become: true
+      ignore_errors: true
+      when: ansible_facts["service_mgr"] == 'systemd'
+
+    - name: Start Docker service (try docker-ce)
+      ansible.builtin.service:
+        name: docker-ce
+        state: started
+        enabled: true
+      become: true
+      ignore_errors: true
+      when: ansible_facts["service_mgr"] == 'systemd'
+
+    - name: Wait a moment for Docker service to start
+      ansible.builtin.pause:
+        seconds: 3
+      when: ansible_facts["service_mgr"] == 'systemd'
+
+    - name: Refresh service facts after starting Docker
+      ansible.builtin.service_facts:
+      when: ansible_facts["service_mgr"] == 'systemd'
+
     - name: Check Docker service state
       ansible.builtin.set_fact:
         docker_service_state: "{{ ansible_facts.services['docker.service'].state if ansible_facts.services['docker.service'] is defined else (ansible_facts.services['docker-ce.service'].state if ansible_facts.services['docker-ce.service'] is defined else 'unknown') }}"
@@ -139,16 +173,6 @@
         fail_msg: "Docker service is not running (state: {{ docker_service_state | default('unknown') }})"
         success_msg: "Docker service is running"
       when: docker_service_state is defined
-
-    - name: Start Docker service to ensure daemon is running
-      ansible.builtin.service:
-        name: "{{ docker_service_name | default('docker') }}"
-        state: started
-        enabled: true
-      become: true
-      when:
-        - ansible_facts["service_mgr"] == 'systemd'
-        - docker_service_name is defined
 
     - name: Set Docker command path
       ansible.builtin.set_fact:
