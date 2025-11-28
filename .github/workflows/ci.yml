@@ -34,7 +34,7 @@ jobs:
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
       - name: Install test dependencies.
-        run: uv pip install yamllint
+        run: uv pip install --system yamllint
 
       - name: Lint code.
         run: |
@@ -72,7 +72,7 @@ jobs:
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
       - name: Install test dependencies.
-        run: uv pip install ansible-core==2.20.0 molecule molecule-plugins[docker] docker netaddr requests
+        run: uv pip install --system ansible-core==2.20.0 molecule molecule-plugins[docker] docker netaddr requests
 
       - name: Run Molecule tests.
         run: molecule test
