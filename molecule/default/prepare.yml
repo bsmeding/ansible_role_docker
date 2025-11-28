@@ -2,24 +2,18 @@
 - name: Prepare
   hosts: all
   gather_facts: false
-  vars:
-    ansible_python_interpreter: /usr/bin/python3
   tasks:
-    - name: Detect OS distribution
-      ansible.builtin.shell: |
+    - name: Detect OS distribution and install Python 3.9 on Rocky Linux 8
+      ansible.builtin.raw: |
         if [ -f /etc/os-release ]; then
           . /etc/os-release
-          echo "$ID $VERSION_ID"
+          if [ "$ID" = "rocky" ] && [ "$VERSION_ID" = "8" ]; then
+            if ! command -v python3.9 &> /dev/null; then
+              dnf install -y python39 python39-pip
+            fi
+          fi
         fi
-      register: os_info
-      changed_when: false
-
-    - name: Install Python 3.9+ on Rocky Linux 8
-      ansible.builtin.package:
-        name: python39
-        state: present
-      when: "'rocky 8' in os_info.stdout"
+      register: prepare_result
+      changed_when: "'python39' in prepare_result.stdout or 'already installed' in prepare_result.stdout"
+      failed_when: false
       become: true
-      vars:
-        ansible_python_interpreter: /usr/bin/python3
-
