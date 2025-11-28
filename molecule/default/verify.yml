@@ -137,6 +137,7 @@
         state: started
         enabled: true
       become: true
+      register: docker_start_result
       ignore_errors: true
       when: ansible_facts["service_mgr"] == 'systemd'
 
@@ -146,12 +147,43 @@
         state: started
         enabled: true
       become: true
+      register: docker_ce_start_result
       ignore_errors: true
       when: ansible_facts["service_mgr"] == 'systemd'
 
-    - name: Wait a moment for Docker service to start
-      ansible.builtin.pause:
-        seconds: 3
+    - name: Check Docker service status
+      ansible.builtin.command: systemctl is-active docker || systemctl is-active docker-ce || echo "neither active"
+      register: docker_active_check
+      changed_when: false
+      failed_when: false
+      when: ansible_facts["service_mgr"] == 'systemd'
+
+    - name: Show Docker service active status
+      ansible.builtin.debug:
+        msg: "Docker service active check: {{ docker_active_check.stdout }}"
+      when:
+        - ansible_facts["service_mgr"] == 'systemd'
+        - docker_active_check is defined
+
+    - name: Check Docker service logs for errors
+      ansible.builtin.command: journalctl -u docker -u docker-ce --no-pager -n 20 || true
+      register: docker_logs
+      changed_when: false
+      failed_when: false
+      when: ansible_facts["service_mgr"] == 'systemd'
+
+    - name: Show Docker service logs
+      ansible.builtin.debug:
+        msg: "Docker service logs: {{ docker_logs.stdout_lines | default([]) | join('\n') }}"
+      when:
+        - ansible_facts["service_mgr"] == 'systemd'
+        - docker_logs is defined
+
+    - name: Wait for Docker socket to appear
+      ansible.builtin.wait_for:
+        path: /var/run/docker.sock
+        state: present
+        timeout: 30
       when: ansible_facts["service_mgr"] == 'systemd'
 
     - name: Refresh service facts after starting Docker
