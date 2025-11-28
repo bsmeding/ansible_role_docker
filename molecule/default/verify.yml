@@ -52,13 +52,20 @@
         timeout: 30
       register: socket_wait
       when: ansible_facts["service_mgr"] == 'systemd'
+      ignore_errors: true
 
-    - name: Fail if Docker socket did not appear
+    - name: Check if Docker socket exists
+      ansible.builtin.stat:
+        path: /var/run/docker.sock
+      register: docker_socket
+      when: ansible_facts["service_mgr"] == 'systemd'
+
+    - name: Fail if Docker socket does not exist
       ansible.builtin.fail:
-        msg: "Docker daemon is not running. Socket /var/run/docker.sock did not appear within 30 seconds. Check Docker service status and logs."
+        msg: "Docker daemon is not running. Socket /var/run/docker.sock does not exist. Check Docker service status and logs."
       when:
         - ansible_facts["service_mgr"] == 'systemd'
-        - socket_wait is failed or socket_wait is skipped
+        - docker_socket.stat.exists | default(false) == false
 
     - name: Test Docker daemon connectivity
       ansible.builtin.command: "{{ docker_binary_path.stdout }} info"
