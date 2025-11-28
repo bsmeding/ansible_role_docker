@@ -54,11 +54,11 @@
 
 - name: Include tasks for RedHat
   ansible.builtin.include_tasks: setup-RedHat.yml
-  when: ansible_os_family == 'RedHat'
+  when: ansible_facts["os_family"] == 'RedHat'
 
 - name: Include tasks for Debian
   ansible.builtin.include_tasks: setup-Debian.yml
-  when: ansible_os_family == 'Debian'
+  when: ansible_facts["os_family"] == 'Debian'
 
 - name: Ensure group "docker" exists
   ansible.builtin.group:
@@ -71,7 +71,7 @@
     state: "{{ docker_packages_state }}"
   notify: restart docker
   ignore_errors: "{{ ansible_check_mode }}"
-  when: "ansible_version.full is version_compare('2.12', '<') or ansible_os_family not in ['RedHat', 'Debian']"
+  when: "ansible_version.full is version_compare('2.12', '<') or ansible_facts['os_family'] not in ['RedHat', 'Debian']"
 
 - name: Install Docker packages (with downgrade option).
   ansible.builtin.package:
@@ -80,7 +80,7 @@
     allow_downgrade: true
   notify: restart docker
   ignore_errors: "{{ ansible_check_mode }}"
-  when: "ansible_version.full is version_compare('2.12', '>=') and ansible_os_family in ['RedHat', 'Debian']"
+  when: "ansible_version.full is version_compare('2.12', '>=') and ansible_facts['os_family'] in ['RedHat', 'Debian']"
 
 - name: Install docker-compose plugin.
   ansible.builtin.package:
@@ -88,7 +88,7 @@
     state: "{{ docker_compose_package_state }}"
   notify: restart docker
   ignore_errors: "{{ ansible_check_mode }}"
-  when: "docker_install_compose_plugin | bool == true and (ansible_version.full is version_compare('2.12', '<') or ansible_os_family not in ['RedHat', 'Debian'])"
+  when: "docker_install_compose_plugin | bool == true and (ansible_version.full is version_compare('2.12', '<') or ansible_facts['os_family'] not in ['RedHat', 'Debian'])"
 
 - name: Install docker-compose-plugin (with downgrade option).
   ansible.builtin.package:
@@ -114,13 +114,40 @@
   when: docker_daemon_options.keys() | length > 0
   notify: restart docker
 
+- name: Reload systemd daemon to recognize new services
+  ansible.builtin.command: systemctl daemon-reload
+  changed_when: true
+  when: 
+    - docker_service_manage | bool
+    - ansible_facts["service_mgr"] == "systemd"
+
+- name: Check if Docker service exists using systemctl
+  ansible.builtin.command: systemctl list-unit-files --type=service --no-pager | grep -E '^docker(-ce)?\.service'
+  register: docker_service_check
+  changed_when: false
+  failed_when: false
+  when: 
+    - docker_service_manage | bool
+    - ansible_facts["service_mgr"] == "systemd"
+
+- name: Determine Docker service name from systemctl output
+  ansible.builtin.set_fact:
+    docker_service_name: "{{ 'docker-ce' if 'docker-ce.service' in docker_service_check.stdout else 'docker' }}"
+  when: 
+    - docker_service_manage | bool
+    - docker_service_check.rc == 0
+    - docker_service_check.stdout is defined
+
 - name: Ensure Docker is started and enabled at boot.
   ansible.builtin.service:
-    name: docker
+    name: "{{ docker_service_name | default('docker') }}"
     state: "{{ docker_service_state }}"
     enabled: "{{ docker_service_enabled }}"
   ignore_errors: "{{ ansible_check_mode }}"
-  when: docker_service_manage | bool
+  when: 
+    - docker_service_manage | bool
+    - docker_service_check.rc == 0
+    - docker_service_name is defined
 
 - name: Ensure handlers are notified now to avoid firewall conflicts.
   meta: flush_handlers
