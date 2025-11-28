@@ -11,11 +11,9 @@
     state: absent
 
 - name: Ensure the repo referencing the previous trusted.gpg.d key is not present
-  ansible.builtin.apt_repository:
-    repo: "deb [arch={{ docker_apt_arch }} signed-by=/etc/apt/trusted.gpg.d/docker.asc] {{ docker_repo_url }}/{{ docker_apt_ansible_distribution | lower }} {{ ansible_distribution_release }} {{ docker_apt_release_channel }}"
+  ansible.builtin.file:
+    path: "/etc/apt/sources.list.d/{{ docker_apt_filename }}.list"
     state: absent
-    filename: "{{ docker_apt_filename }}"
-    update_cache: true
   when: docker_add_repo | bool
 
 - name: Ensure old versions of Docker are not installed.
