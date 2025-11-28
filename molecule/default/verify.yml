@@ -28,14 +28,26 @@
 
     - name: Gather service facts
       ansible.builtin.service_facts:
+      register: service_facts_result
+      failed_when: false
+      changed_when: false
+
+    - name: Check if Docker service exists in facts
+      ansible.builtin.set_fact:
+        docker_service_exists: "{{ ansible_facts.services is defined and 'docker.service' in ansible_facts.services }}"
+      when: ansible_facts.services is defined
 
     - name: Assert Docker is running
       ansible.builtin.assert:
         that:
+          - ansible_facts.services is defined
+          - ansible_facts.services['docker.service'] is defined
           - ansible_facts.services['docker.service'].state == 'running'
         fail_msg: "Docker service is not running"
         success_msg: "Docker service is running"
-      when: "'docker.service' in ansible_facts.services"
+      when: 
+        - ansible_facts.services is defined
+        - ansible_facts.services['docker.service'] is defined
 
     - name: Restart Docker service to ensure daemon matches installed packages
       ansible.builtin.service:
