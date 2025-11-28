@@ -2,11 +2,40 @@
 - name: Verify Docker Role
   hosts: all
   tasks:
+    - name: Find Docker binary location
+      ansible.builtin.command: which docker || command -v docker
+      register: docker_binary_path
+      changed_when: false
+      failed_when: false
+
+    - name: Check if Docker packages are installed
+      ansible.builtin.shell: |
+        if command -v dpkg >/dev/null 2>&1; then
+          dpkg -l | grep -E '^ii.*docker-ce|^ii.*docker.io' || true
+        elif command -v rpm >/dev/null 2>&1; then
+          rpm -qa | grep docker || true
+        fi
+      register: docker_package_check
+      changed_when: false
+      failed_when: false
+      when: docker_binary_path.rc != 0
+
+    - name: Fail if Docker is not installed
+      ansible.builtin.fail:
+        msg: |
+          Docker binary not found and Docker packages not detected.
+          This indicates the converge phase may have failed to install Docker.
+          Please check the converge playbook output for errors.
+      when: 
+        - docker_binary_path.rc != 0
+        - docker_package_check.stdout | length == 0
+
     - name: Verify Docker binary is available
-      ansible.builtin.command: docker --version
+      ansible.builtin.command: "{{ docker_binary_path.stdout }} --version"
       register: docker_version_result
       changed_when: false
       failed_when: docker_version_result.rc != 0
+      when: docker_binary_path.rc == 0
 
     - name: Show Docker version details
       ansible.builtin.debug:
@@ -45,7 +74,7 @@
           - ansible_facts.services['docker.service'].state == 'running'
         fail_msg: "Docker service is not running"
         success_msg: "Docker service is running"
-      when: 
+      when:
         - ansible_facts.services is defined
         - ansible_facts.services['docker.service'] is defined
 
@@ -56,25 +85,33 @@
       become: true
       when: ansible_service_mgr == 'systemd'
 
+    - name: Set Docker command path
+      ansible.builtin.set_fact:
+        docker_cmd: "{{ docker_binary_path.stdout }}"
+      when: docker_binary_path.rc == 0
+
     - name: Wait for Docker daemon to be ready after restart
-      ansible.builtin.command: docker info
+      ansible.builtin.command: "{{ docker_cmd }} info"
       register: docker_info_result
       until: docker_info_result.rc == 0
       retries: 10
       delay: 2
       changed_when: false
+      when: docker_cmd is defined
 
     - name: Show Docker daemon information
       ansible.builtin.debug:
         msg: >
           Docker Daemon Info:
           {{ docker_info_result.stdout_lines | join('\n') }}
+      when: docker_info_result is defined
 
     - name: Pull the 'hello-world' image
-      ansible.builtin.command: docker pull hello-world
+      ansible.builtin.command: "{{ docker_cmd }} pull hello-world"
       register: docker_pull_result
       changed_when: true
       failed_when: docker_pull_result.rc != 0
+      when: docker_cmd is defined
 
     - name: Show result of pulling the 'hello-world' image
       ansible.builtin.debug:
