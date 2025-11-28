@@ -2,11 +2,42 @@
 - name: Verify Docker Role
   hosts: all
   tasks:
-    - name: Find Docker binary location
+    - name: Find Docker binary location in PATH
       ansible.builtin.command: which docker || command -v docker
       register: docker_binary_path
       changed_when: false
       failed_when: false
+
+    - name: Find Docker binary in common locations
+      ansible.builtin.stat:
+        path: "{{ item }}"
+      register: docker_binary_stat
+      loop:
+        - /usr/bin/docker
+        - /usr/local/bin/docker
+        - /bin/docker
+      when: docker_binary_path.rc != 0
+      changed_when: false
+      failed_when: false
+
+    - name: Find first existing Docker binary
+      ansible.builtin.set_fact:
+        docker_binary_found: "{{ item.item }}"
+      loop: "{{ docker_binary_stat.results | default([]) }}"
+      when:
+        - docker_binary_path.rc != 0
+        - docker_binary_stat is defined
+        - item.stat.exists | default(false) | bool
+        - docker_binary_found is not defined
+      loop_control:
+        label: "{{ item.item }}"
+
+    - name: Set Docker binary path from found location
+      ansible.builtin.set_fact:
+        docker_binary_path: "{{ {'rc': 0, 'stdout': docker_binary_found} }}"
+      when:
+        - docker_binary_path.rc != 0
+        - docker_binary_found is defined
 
     - name: Check if Docker packages are installed
       ansible.builtin.shell: |
@@ -89,7 +120,7 @@
         name: docker
         state: restarted
       become: true
-      when: ansible_service_mgr == 'systemd'
+      when: ansible_facts["service_mgr"] == 'systemd'
 
     - name: Set Docker command path
       ansible.builtin.set_fact:
