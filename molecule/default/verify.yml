@@ -78,7 +78,7 @@
 
     - name: Fail if Docker socket does not exist
       ansible.builtin.debug:
-        msg: "Docker daemon is not running. Socket /var/run/docker.sock does not exist. Skipping failure as this is likely due to Docker-in-Docker limitations in CI."
+        msg: "Docker daemon is not running. Socket /var/run/docker.sock does not exist. Skipping failure in CI environment."
       when:
         - ansible_facts["service_mgr"] == 'systemd'
         - docker_socket.stat.exists | default(false) == false
