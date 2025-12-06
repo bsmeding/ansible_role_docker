@@ -88,7 +88,7 @@
       register: docker_info
       changed_when: false
       failed_when: docker_info.rc != 0
-      when: 
+      when:
         - docker_cmd is defined
         - docker_socket.stat.exists | default(false)
 
@@ -96,7 +96,7 @@
       ansible.builtin.command: "{{ docker_cmd }} pull hello-world"
       register: docker_pull
       changed_when: true
-      when: 
+      when:
         - docker_cmd is defined
         - docker_socket.stat.exists | default(false)
 
