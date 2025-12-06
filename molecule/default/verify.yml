@@ -88,13 +88,17 @@
       register: docker_info
       changed_when: false
       failed_when: docker_info.rc != 0
-      when: docker_cmd is defined
+      when: 
+        - docker_cmd is defined
+        - docker_socket.stat.exists | default(false)
 
     - name: Pull hello-world image to verify Docker works
       ansible.builtin.command: "{{ docker_cmd }} pull hello-world"
       register: docker_pull
       changed_when: true
-      when: docker_cmd is defined
+      when: 
+        - docker_cmd is defined
+        - docker_socket.stat.exists | default(false)
 
     - name: Display pull result
       ansible.builtin.debug:
