@@ -30,6 +30,14 @@
       ansible.builtin.debug:
         msg: "Docker version: {{ docker_version.stdout }}"
 
+    - name: Unmask Docker service
+      ansible.builtin.systemd:
+        name: docker
+        masked: false
+      become: true
+      when: ansible_facts["service_mgr"] == 'systemd'
+      ignore_errors: true
+
     - name: Ensure Docker service is running (try docker)
       ansible.builtin.service:
         name: docker
