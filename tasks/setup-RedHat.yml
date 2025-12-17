@@ -57,6 +57,23 @@
         state: present
   when: ansible_distribution_major_version | int == 8
 
+- name: Ensure EPEL GPG key is present (RHEL)
+  ansible.builtin.rpm_key:
+    key: "https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-{{ ansible_distribution_major_version }}"
+    state: present
+  when: ansible_distribution != 'Fedora'
+  ignore_errors: true
+
+- name: Install Python Docker library via OS package (RHEL 8 and below)
+  ansible.builtin.package:
+    name: "{{ item.name }}"
+    state: present
+  with_items: "{{ os_packages }}"
+  when:
+    - os_packages is defined and os_packages | length > 0
+    - ansible_distribution_major_version | int < 9
+  ignore_errors: true
+
 - name: Install Python Docker library for RHEL 9+ (OS package not available)
   block:
     - name: Ensure pip3 is installed

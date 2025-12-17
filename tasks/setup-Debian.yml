@@ -89,3 +89,4 @@
     state: present
   with_items: "{{ os_packages }}"
   when: os_packages is defined and os_packages | length > 0
+  ignore_errors: true
