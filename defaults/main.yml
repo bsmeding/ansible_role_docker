@@ -73,6 +73,9 @@ docker_yum_gpg_key: "{{ docker_repo_url }}/centos/gpg"
 # A list of users who will be added to the docker group.
 docker_users: []
 
+# Extra arguments for pip install commands (e.g., for SSL inspection proxies)
+docker_pip_packages_extra_args: ''
+
 # Docker daemon options as a dict
 # Allow remote access
 # Two options to set remote access:

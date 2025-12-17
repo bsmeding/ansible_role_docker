@@ -124,6 +124,21 @@ docker_users: []
 
 A list of system users to add to the `docker` group.
 
+### Python Docker Library Installation
+
+```yaml
+docker_pip_packages_extra_args: ''
+```
+
+Extra arguments to pass to pip when installing the Python Docker library (required for Ansible's Docker modules). This is useful when working behind SSL inspection proxies or when custom pip configuration is needed.
+
+Example for SSL inspection:
+```yaml
+docker_pip_packages_extra_args: '--trusted-host pypi.org --trusted-host files.pythonhosted.org'
+```
+
+**Note**: On RHEL/Rocky 9+, the Python Docker library is installed via pip (as OS packages aren't available for Python 3.9+). On Debian/Ubuntu, it's installed via apt as `python3-docker`.
+
 ### Docker Daemon Options
 
 ```yaml
