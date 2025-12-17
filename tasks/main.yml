@@ -10,14 +10,6 @@
       paths:
         - 'vars'
 
-- name: Install OS packages for Docker support
-  ansible.builtin.package:
-    name: "{{ item.name }}"
-    state: present
-  with_items: "{{ os_packages }}"
-  when: os_packages is defined and os_packages | length > 0
-  become: true
-
 - name: Ensure group "docker" exists
   ansible.builtin.group:
     name: docker
