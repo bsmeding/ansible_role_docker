@@ -74,17 +74,63 @@
     - ansible_distribution_major_version | int < 9
   ignore_errors: true
 
-- name: Install Python Docker library for RHEL 9+ (OS package not available)
-  block:
-    - name: Ensure pip3 is installed
-      ansible.builtin.package:
-        name: python3-pip
-        state: present
+- name: Ensure pip3 is installed
+  ansible.builtin.package:
+    name: python3-pip
+    state: present
+  ignore_errors: true
 
-    - name: Ensure python3-docker is installed
-      ansible.builtin.package:
-        name: python3-docker
-        state: present
+- name: Install Python Docker library via pip (RHEL 9+ - EPEL version too old)
+  block:
+    - name: Upgrade pip to latest version
+      ansible.builtin.pip:
+        name: pip
+        state: latest
+        executable: pip3
+        extra_args: "{{ docker_pip_packages_extra_args | default(omit) }}"
+      ignore_errors: true
+
+    - name: Install docker library via pip (try with break-system-packages for RHEL 9+)
+      ansible.builtin.pip:
+        name: docker
+        state: latest
+        executable: pip3
+        extra_args: "{{ ('--break-system-packages --upgrade-strategy only-if-needed ' + docker_pip_packages_extra_args) if docker_pip_packages_extra_args else '--break-system-packages --upgrade-strategy only-if-needed' }}"
+      register: pip_install_break
+      ignore_errors: true
+      when: ansible_distribution_major_version | int >= 9
+
+    - name: Install docker library via pip (fallback without break-system-packages for RHEL 9+)
+      ansible.builtin.pip:
+        name: docker
+        state: latest
+        executable: pip3
+        extra_args: "{{ ('--upgrade-strategy only-if-needed ' + docker_pip_packages_extra_args) if docker_pip_packages_extra_args else '--upgrade-strategy only-if-needed' }}"
+      register: pip_install_fallback
+      ignore_errors: true
+      when:
+        - ansible_distribution_major_version | int >= 9
+        - pip_install_break is failed
+
+    - name: Install docker library via pip (final fallback - ignore installed requests)
+      ansible.builtin.pip:
+        name: docker
+        state: latest
+        executable: pip3
+        extra_args: "{{ ('--break-system-packages --ignore-installed requests ' + docker_pip_packages_extra_args) if docker_pip_packages_extra_args else '--break-system-packages --ignore-installed requests' }}"
+      when:
+        - ansible_distribution_major_version | int >= 9
+        - pip_install_break is failed
+        - pip_install_fallback is failed
+
+    - name: Upgrade docker library via pip (for RHEL 8 - upgrade OS package version)
+      ansible.builtin.pip:
+        name: docker
+        state: latest
+        executable: pip3
+        extra_args: "{{ docker_pip_packages_extra_args | default(omit) }}"
+      when: ansible_distribution_major_version | int < 9
+      ignore_errors: true
 
     # - name: Upgrade pip to latest version
     #   ansible.builtin.pip:
