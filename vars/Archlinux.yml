@@ -1,3 +1,6 @@
 ---
 docker_packages: "docker"
 docker_compose_package: docker-compose
+
+os_packages:
+  - name: python-docker

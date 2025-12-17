@@ -9,3 +9,6 @@ docker_obsolete_packages:
   - podman-docker
   - containerd
   - runc
+
+os_packages:
+  - name: python3-docker

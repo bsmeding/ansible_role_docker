@@ -8,3 +8,6 @@ docker_obsolete_packages:
   - docker-latest-logrotate
   - docker-logrotate
   - docker-engine
+
+os_packages:
+  - name: python3-docker
