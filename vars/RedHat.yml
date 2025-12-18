@@ -11,3 +11,4 @@ docker_obsolete_packages:
 
 os_packages:
   - name: python3-docker
+  - name: python3-dnf
