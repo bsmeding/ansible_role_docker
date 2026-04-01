@@ -3,7 +3,7 @@ galaxy_info:
   role_name: docker
   author: bsmeding
   description: Docker for Linux, Forked from geerlingguy.docker.
-  company: "b@rtsmeding.nl"
+  company: "b@rtsmeding IT"
   license: MIT
   min_ansible_version: '2.10'
   platforms:
