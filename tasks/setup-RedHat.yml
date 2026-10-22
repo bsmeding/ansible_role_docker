@@ -55,13 +55,13 @@
       ansible.builtin.package:
         name: containerd.io
         state: present
-  when: ansible_distribution_major_version | int == 8
+  when: ansible_facts['distribution_major_version'] | int == 8
 
 - name: Ensure EPEL GPG key is present (RHEL)
   ansible.builtin.rpm_key:
-    key: "https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-{{ ansible_distribution_major_version }}"
+    key: "https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-{{ ansible_facts['distribution_major_version'] }}"
     state: present
-  when: ansible_distribution != 'Fedora'
+  when: ansible_facts['distribution'] != 'Fedora'
   ignore_errors: true
 
 - name: Install Python Docker library via OS package
